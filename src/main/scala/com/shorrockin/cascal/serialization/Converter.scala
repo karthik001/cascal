@@ -1,12 +1,16 @@
 package com.shorrockin.cascal.serialization
 
 import reflect.Manifest
+
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method}
 import java.util.{Arrays, Date, UUID}
+import java.nio.ByteBuffer
+
 import annotations.{Columns, Optional}
 import annotations.{Key => AKey, SuperColumn => ASuperColumn, Value => AValue}
 import annotations.{Keyspace => AKeySpace, Super => ASuper, Family => AFamily}
+
 import com.shorrockin.cascal.model._
 import com.shorrockin.cascal.utils.{Logging, Conversions}
 
@@ -99,7 +103,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
    * Given a class type, a Method that returns that type, and a source object (Cascal ORM object),
    * return the appropriate serialized byte array. Does not support Option.
    */
-  private def getFieldSerialized[T](fieldType:Class[_], fieldGetter:Method, obj:T):Array[Byte] = {
+  private def getFieldSerialized[T](fieldType:Class[_], fieldGetter:Method, obj:T):ByteBuffer = {
     // Couldn't figure out how to case match classes on a class obj with type erasure
     if (fieldType == classOf[String]) Conversions.bytes(fieldGetter.invoke(obj).asInstanceOf[String])
     else if (fieldType == classOf[UUID]) Conversions.bytes(fieldGetter.invoke(obj).asInstanceOf[UUID])
@@ -118,7 +122,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
    * return null if calling the method returns None, or otherwise the appropriate
    * serialized byte array.
    */
-  private def getOptionFieldSerialized[T](fieldGetter:Method, obj:T):Array[Byte] = {
+  private def getOptionFieldSerialized[T](fieldGetter:Method, obj:T):ByteBuffer = {
     val opt = fieldGetter.invoke(obj).asInstanceOf[Option[_]]
     opt match {
       case None => null
@@ -148,7 +152,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
       case _ => false
     }).head._1.invoke(obj).asInstanceOf[String]
 
-    var superCol:Array[Byte] = null
+    var superCol:ByteBuffer = null
     if (info.isSuper) {
       val superTup = info.fieldGettersAndColumnNames.filter(tup => tup._2._2 match {
         case a:ASuperColumn => true
@@ -174,7 +178,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
         case _ => null
       }
 
-      val value:Array[Byte] = optField match {
+      val value:ByteBuffer = optField match {
         case false => getFieldSerialized(fieldType, fieldGetter, obj)
         case true => getOptionFieldSerialized(fieldGetter, obj)
       }
@@ -209,7 +213,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
    */
   private def find(name:String, columns:Seq[Column[_]]):Option[Column[_]] = {
     val nameBytes = Conversions.bytes(name)
-    columns.find { (c) => Arrays.equals(nameBytes, c.name) }
+    columns.find { (c) => Arrays.equals(nameBytes.array, c.name.array) }
   }
 
 
@@ -217,7 +221,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
    * converts the specified byte array to the specified type using the installed
    * serializers.
    */
-  private def bytesToObject[A](ofType:Class[A], bytes:Array[Byte]):A = {
+  private def bytesToObject[A](ofType:Class[A], bytes:ByteBuffer):A = {
     serializers.get(ofType) match {
       case None    => throw new IllegalArgumentException("unable to find serializer for type: " + ofType)
       case Some(s) =>

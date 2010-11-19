@@ -31,10 +31,10 @@ object Serializer {
  */
 trait Serializer[A] {
   /** converts this object to a byte array for entry into cassandra */
-  def toBytes(obj:A):Array[Byte]
+  def toBytes(obj:A):ByteBuffer
 
   /** converts the specified byte array into an object */
-  def fromBytes(bytes:Array[Byte]):A
+  def fromBytes(bytes:ByteBuffer):A
 
   /** converts the specified value to a string */
   def toString(obj:A):String
@@ -46,14 +46,14 @@ trait Serializer[A] {
 object StringSerializer extends Serializer[String] {
   val utf8 = Charset.forName("UTF-8")
 
-  def toBytes(str:String) = str.getBytes(utf8)
-  def fromBytes(bytes:Array[Byte]) = new String(bytes, utf8)
+  def toBytes(str:String) = ByteBuffer.wrap(str.getBytes(utf8))
+  def fromBytes(bytes:ByteBuffer) = new String(bytes.array, utf8)
   def toString(str:String) = str
   def fromString(str:String) = str
 }
 
 object UUIDSerializer extends Serializer[UUID] {
-  def fromBytes(bytes:Array[Byte]) = UUIDUtils(bytes)
+  def fromBytes(bytes:ByteBuffer) = UUIDUtils(bytes.array)
   def toString(uuid:UUID) = uuid.toString
   def fromString(str:String) = UUID.fromString(str)
 
@@ -65,7 +65,7 @@ object UUIDSerializer extends Serializer[UUID] {
     (0 until 8).foreach  { (i) => buffer(i) = (msb >>> 8 * (7 - i)).asInstanceOf[Byte] }
     (8 until 16).foreach { (i) => buffer(i) = (lsb >>> 8 * (7 - i)).asInstanceOf[Byte] }
 
-    buffer
+    ByteBuffer.wrap(buffer)
   }
 
 }
@@ -73,8 +73,8 @@ object UUIDSerializer extends Serializer[UUID] {
 object IntSerializer extends Serializer[Int] {
   val bytesPerInt = java.lang.Integer.SIZE / java.lang.Byte.SIZE
 
-  def toBytes(i:Int) = ByteBuffer.wrap(new Array[Byte](bytesPerInt)).putInt(i).array()
-  def fromBytes(bytes:Array[Byte]) = ByteBuffer.wrap(bytes).getInt()
+  def toBytes(i:Int) = ByteBuffer.wrap(new Array[Byte](bytesPerInt)).putInt(i)
+  def fromBytes(bytes:ByteBuffer) = bytes.getInt()
   def toString(obj:Int) = obj.toString
   def fromString(str:String) = str.toInt
 }
@@ -82,15 +82,15 @@ object IntSerializer extends Serializer[Int] {
 object LongSerializer extends Serializer[Long] {
   val bytesPerLong = java.lang.Long.SIZE / java.lang.Byte.SIZE
 
-  def toBytes(l:Long) = ByteBuffer.wrap(new Array[Byte](bytesPerLong)).putLong(l).array()
-  def fromBytes(bytes:Array[Byte]) = ByteBuffer.wrap(bytes).getLong()
+  def toBytes(l:Long) = ByteBuffer.wrap(new Array[Byte](bytesPerLong)).putLong(l)
+  def fromBytes(bytes:ByteBuffer) = bytes.getLong()
   def toString(obj:Long) = obj.toString
   def fromString(str:String) = str.toLong
 }
 
 object BooleanSerializer extends Serializer[Boolean] {
   def toBytes(b:Boolean) = StringSerializer.toBytes(b.toString)
-  def fromBytes(bytes:Array[Byte]) = StringSerializer.fromBytes(bytes).toBoolean
+  def fromBytes(bytes:ByteBuffer) = StringSerializer.fromBytes(bytes).toBoolean
   def toString(obj:Boolean) = obj.toString
   def fromString(str:String) = str.toBoolean
 }
@@ -98,8 +98,8 @@ object BooleanSerializer extends Serializer[Boolean] {
 object FloatSerializer extends Serializer[Float] {
   val bytesPerFloat = java.lang.Float.SIZE / java.lang.Byte.SIZE
 
-  def toBytes(f:Float) = ByteBuffer.wrap(new Array[Byte](bytesPerFloat)).putFloat(f).array()
-  def fromBytes(bytes:Array[Byte]) = ByteBuffer.wrap(bytes).getFloat()
+  def toBytes(f:Float) = ByteBuffer.wrap(new Array[Byte](bytesPerFloat)).putFloat(f)
+  def fromBytes(bytes:ByteBuffer) = bytes.getFloat()
   def toString(obj:Float) = obj.toString
   def fromString(str:String) = str.toFloat
 }
@@ -107,15 +107,15 @@ object FloatSerializer extends Serializer[Float] {
 object DoubleSerializer extends Serializer[Double] {
   val bytesPerDouble = java.lang.Double.SIZE / java.lang.Byte.SIZE
 
-  def toBytes(d:Double) = ByteBuffer.wrap(new Array[Byte](bytesPerDouble)).putDouble(d).array()
-  def fromBytes(bytes:Array[Byte]) = ByteBuffer.wrap(bytes).getDouble
+  def toBytes(d:Double) = ByteBuffer.wrap(new Array[Byte](bytesPerDouble)).putDouble(d)
+  def fromBytes(bytes:ByteBuffer) = bytes.getDouble
   def toString(obj:Double) = obj.toString
   def fromString(str:String) = str.toDouble
 }
 
 object DateSerializer extends Serializer[Date] {
   def toBytes(date:Date) = LongSerializer.toBytes(date.getTime)
-  def fromBytes(bytes:Array[Byte]) = new Date(LongSerializer.fromBytes(bytes).longValue)
+  def fromBytes(bytes:ByteBuffer) = new Date(bytes.getLong())
   def toString(obj:Date) = obj.getTime.toString
   def fromString(str:String) = new Date(str.toLong.longValue)
 }

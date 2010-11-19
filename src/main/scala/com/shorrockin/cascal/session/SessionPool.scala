@@ -19,9 +19,14 @@ import com.shorrockin.cascal.model._
  *
  * @author Chris Shorrock
  */
-class SessionPool(val hosts:Seq[Host], val params:PoolParams, consistency:Consistency, framedTransport:Boolean) extends SessionTemplate {
-  def this(hosts:Seq[Host], params:PoolParams, consistency:Consistency) = this(hosts, params, consistency, false)
-  def this(hosts:Seq[Host], params:PoolParams) = this(hosts, params, Consistency.One, false)
+class SessionPool(val hosts:Seq[Host], val params:PoolParams, consistency:Consistency, framedTransport:Boolean) 
+		extends SessionTemplate {
+			
+  def this(hosts:Seq[Host], params:PoolParams, consistency:Consistency) = 
+		this(hosts, params, consistency, false)
+
+  def this(hosts:Seq[Host], params:PoolParams) = 
+		this(hosts, params, Consistency.One, false)
 
   CascalStatistics.register(this)
 
@@ -173,9 +178,9 @@ class SessionPool(val hosts:Seq[Host], val params:PoolParams, consistency:Consis
 
   def insert[E](col:Column[E]):Column[E] = borrow { _.insert(col) }
 
-  def count(container:ColumnContainer[_ ,_], consistency:Consistency):Int = borrow { _.count(container, consistency) }
+  def count(container:ColumnContainer[_ ,_], predicate: Predicate, consistency:Consistency):Int = borrow { _.count(container, predicate,consistency) }
 
-  def count(container:ColumnContainer[_, _]):Int = borrow { _.count(container) }
+  def count(container:ColumnContainer[_, _], predicate: Predicate):Int = borrow { _.count(container,predicate) }
 
   def remove(container:ColumnContainer[_, _], consistency:Consistency):Unit = borrow { _.remove(container, consistency) }
 

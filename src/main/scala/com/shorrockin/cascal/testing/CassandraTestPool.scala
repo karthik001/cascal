@@ -49,7 +49,7 @@ object EmbeddedTestCassandra extends Logging {
 
       log.debug("creating data file and log location directories")
       DatabaseDescriptor.getAllDataFileLocations.foreach { (file) => new File(file).mkdirs }
-      new File(DatabaseDescriptor.getLogFileLocation).mkdirs
+      // new File(DatabaseDescriptor.getLogFileLocation).mkdirs
 
       val daemon = new CassandraDaemonThread
       daemon.start

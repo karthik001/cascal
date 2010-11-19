@@ -1,9 +1,11 @@
 package com.shorrockin.cascal.model
 
 import java.util.Date
-import org.apache.cassandra.thrift.{ColumnPath, ColumnOrSuperColumn}
-import org.apache.cassandra.thrift.{Column => CassColumn}
-import org.apache.cassandra.thrift.{SuperColumn => CassSuperColumn}
+import java.nio.ByteBuffer
+
+import org.apache.cassandra.thrift.{ColumnPath, ColumnOrSuperColumn,Column => CassColumn}
+import org.apache.cassandra.thrift.{ColumnParent, SuperColumn => CassSuperColumn}
+
 import com.shorrockin.cascal.utils.Conversions
 import com.shorrockin.cascal.utils.Utils.now
 
@@ -15,14 +17,12 @@ import com.shorrockin.cascal.utils.Utils.now
  * @author Chris Shorrock
  * @param Owner the type of object which owns this column
  */
-case class Column[Owner](val name:Array[Byte],
-                         val value:Array[Byte],
-                         val time:Long,
-                         val owner:Owner) extends Gettable[Column[Owner]] {
+case class Column[Owner](val name:ByteBuffer,val value:ByteBuffer,val time:Long,val owner:Owner) 
+		extends Gettable[Column[Owner]] {
 
-  def this(name:Array[Byte], value:Array[Byte], owner:Owner) = this(name, value, now, owner)
-  def this(name:Array[Byte], owner:Owner) = this(name, null, now, owner)
-  def this(name:Array[Byte], value:Array[Byte], date:Date, owner:Owner) = this(name, value, date.getTime, owner)
+  def this(name:ByteBuffer, value:ByteBuffer, owner:Owner) = this(name, value, now, owner)
+  def this(name:ByteBuffer, owner:Owner) = this(name, null, now, owner)
+  def this(name:ByteBuffer, value:ByteBuffer, date:Date, owner:Owner) = this(name, value, date.getTime, owner)
 
 
   val partial  = (value == null)
@@ -30,6 +30,12 @@ case class Column[Owner](val name:Array[Byte],
   val family   = key.family
   val keyspace = key.keyspace
 
+	// columnParent
+	lazy val columnParent = new ColumnParent(family.value).setSuper_column(value)
+
+	// thrift.Column
+	lazy val cassandraColumn = new CassColumn(name, value, time)
+	
   lazy val columnPath = {
     val out = new ColumnPath(family.value)
     owner match {
@@ -53,7 +59,7 @@ case class Column[Owner](val name:Array[Byte],
    * copy method to create a new instance of this column with a new value and
    * the same other values.
    */
-  def \(newValue:Array[Byte]) = new Column[Owner](name, newValue, time, owner)
+  def \(newValue:ByteBuffer) = new Column[Owner](name, newValue, time, owner)
 
 
   /**
@@ -68,12 +74,12 @@ case class Column[Owner](val name:Array[Byte],
    */
   def convertGetResult(colOrSuperCol:ColumnOrSuperColumn):Column[Owner] = {
     val col = colOrSuperCol.getColumn
-    Column(col.getName, col.getValue, col.getTimestamp, owner)
+    Column(ByteBuffer.wrap(col.getName), ByteBuffer.wrap(col.getValue), col.getTimestamp, owner)
   }
 
-  private def stringIfPossible(a:Array[Byte]):String = {
-    if (a.length <= 4) return "Array (" + a.mkString(", ") + ")"
-    if (a.length > 1000) return a.toString
+  private def stringIfPossible(a:ByteBuffer):String = {
+    if (a.array.length <= 4) return "Array (" + a.array.mkString(", ") + ")"
+    if (a.array.length > 1000) return a.toString
     try { Conversions.string(a) } catch { case _ => a.toString }
   }
 

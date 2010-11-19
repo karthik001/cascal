@@ -14,7 +14,7 @@ object Consistency {
    *
    * READ: Not supported, because it doesn't make sense
    */
-  val Zero = new Consistency { def thriftValue = ConsistencyLevel.ZERO }
+  // val Zero = new Consistency { def thriftValue = ConsistencyLevel.ZERO }
 
   /**
    * WRITE: Ensure that the write has been written to at least 1 node,

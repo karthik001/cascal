@@ -1,6 +1,7 @@
 package com.shorrockin.cascal.session
 
 import org.apache.cassandra.thrift.{KeyRange => CassKeyRange}
+import com.shorrockin.cascal.serialization.StringSerializer
 
 /**
  * a key range is used when you list by keys to specified the start and end
@@ -13,8 +14,8 @@ import org.apache.cassandra.thrift.{KeyRange => CassKeyRange}
 case class KeyRange(start:String, end:String, limit:Int) {
   lazy val cassandraRange = {
     val range = new CassKeyRange(limit)
-    range.setStart_key(start)
-    range.setEnd_key(end)
+    range.setStart_key(StringSerializer.toBytes(start))
+    range.setEnd_key(StringSerializer.toBytes(end))
     range
   }
 }

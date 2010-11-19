@@ -62,13 +62,13 @@ trait SessionTemplate {
   /**
    *   counts the number of columns in the specified column container
    */
-  def count(container:ColumnContainer[_ ,_], consistency:Consistency):Int
+  def count(container:ColumnContainer[_ ,_], predicate: Predicate, consistency:Consistency):Int
 
 
   /**
    * performs count on the specified column container
    */
-  def count(container:ColumnContainer[_, _]):Int
+  def count(container:ColumnContainer[_, _], predicate: Predicate):Int
 
 
   /**
