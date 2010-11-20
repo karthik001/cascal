@@ -62,15 +62,15 @@ class TestSuperInsertAndList extends CassandraTestPool with Logging {
 
       superKeyList.foreach {
         (sc) =>
-          log.debug("list(key) super column: " + UUID(sc._1.value))
+          log.debug("list(key) super column: " + UUID(sc._1.value.array))
           sc._2.foreach {(column) => log.debug("  " + string(column))}
       }
 
       assertEquals(2, superKeyList.size)
-      assertEquals(UUID(superColumn1.value), UUID(superKeyList(0)._1.value)) // ensures it's returned in order
-      assertEquals(UUID(superColumn2.value), UUID(superKeyList(1)._1.value))
-      assertEquals(3, locate(superKeyList, superColumn1.value).size)
-      assertEquals(2, locate(superKeyList, superColumn2.value).size)
+      assertEquals(UUID(superColumn1.value.array), UUID(superKeyList(0)._1.value.array)) // ensures it's returned in order
+      assertEquals(UUID(superColumn2.value.array), UUID(superKeyList(1)._1.value.array))
+      assertEquals(3, locate(superKeyList, superColumn1.value.array).size)
+      assertEquals(2, locate(superKeyList, superColumn2.value.array).size)
 
 
       var failFamily = "Test" \\ "Unsuper"
@@ -104,7 +104,7 @@ class TestSuperInsertAndList extends CassandraTestPool with Logging {
   def locate(l: Seq[(SuperColumn, Seq[Column[_]])], value: Array[Byte]): Seq[Column[_]] = {
     l.foreach {
       (tuple) =>
-        if (java.util.Arrays.equals(tuple._1.value, value)) {
+        if (java.util.Arrays.equals(tuple._1.value.array, value)) {
           return tuple._2
         }
     }

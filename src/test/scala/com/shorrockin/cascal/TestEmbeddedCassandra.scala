@@ -10,9 +10,8 @@ class TestEmbeddedCassandra extends CassandraTestPool {
 
   @Test def testCanUseSession = borrow { (s) =>
     import s._
-    val key    = "Test" \ "Standard" \ "testCanUseSessions"
+    val key = "Test" \ "Standard" \ "testCanUseSessions"
     val column = key \ "Hello" \ "World"
-
     insert(column)
     assertEquals(1, list(key).size)
   }

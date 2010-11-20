@@ -1,18 +1,19 @@
 package com.shorrockin.cascal.testing
 
 import org.apache.cassandra.thrift.CassandraDaemon
-import org.apache.cassandra.config.DatabaseDescriptor
 import java.io.File
-import java.net.ConnectException
-import org.apache.thrift.transport.{TTransportException, TSocket}
+
+import org.apache.thrift.transport.TSocket
 import com.shorrockin.cascal.session._
 import com.shorrockin.cascal.utils.{Utils, Logging}
+import org.apache.cassandra.config.{KSMetaData, CFMetaData, DatabaseDescriptor}
+
 /**
  * trait which mixes in the functionality necessary to embed
  * cassandra into a unit test
  */
 trait CassandraTestPool extends Logging {
-  def borrow(f:(Session) => Unit) = {
+  def borrow(f: (Session) => Unit) = {
     EmbeddedTestCassandra.init
     EmbeddedTestCassandra.pool.borrow(f)
   }
@@ -25,30 +26,41 @@ object EmbeddedTestCassandra extends Logging {
   import Utils._
   var initialized = false
 
-  val hosts  = Host("localhost", 9160, 250) :: Nil
+  val hosts = Host("localhost", 9160, 250) :: Nil
   val params = new PoolParams(10, ExhaustionPolicy.Fail, 500L, 6, 2)
   lazy val pool = new SessionPool(hosts, params, Consistency.One)
+
+  def loadSchemaFromYaml = {
+    import collection.JavaConversions._
+    
+    for (ksm: KSMetaData <- DatabaseDescriptor.readTablesFromYaml()) {
+      for (cfm: CFMetaData <- ksm.cfMetaData().values())
+        CFMetaData.map(cfm)
+      DatabaseDescriptor.setTableDefinition(ksm, DatabaseDescriptor.getDefsVersion())
+    }
+  }
 
   def init = synchronized {
     if (!initialized) {
       val homeDirectory = new File("target/cassandra.home.unit-tests")
-      delete(homeDirectory)
-      homeDirectory.mkdirs
+      //      delete(homeDirectory)
+      //      homeDirectory.mkdirs
 
       log.debug("creating cassandra instance at: " + homeDirectory.getCanonicalPath)
-      log.debug("copying cassandra configuration files to root directory")
-    
-      val fileSep     = System.getProperty("file.separator")
-      val storageFile = new File(homeDirectory, "storage-conf.xml")
-      val logFile     = new File(homeDirectory, "log4j.properties")
+      //      log.debug("copying cassandra configuration files to root directory")
 
-      replace(copy(resource("/storage-conf.xml"), storageFile), ("%temp-dir%" -> (homeDirectory.getCanonicalPath + fileSep)))
-      copy(resource("/log4j.properties"), logFile)
+      val fileSep = System.getProperty("file.separator")
+      // val storageFile = new File(homeDirectory, "storage-conf.xml")
+      //      val storageFile = new File(homeDirectory, "cassandra.yaml")
+      //      val logFile     = new File(homeDirectory, "log4j.properties")
+      //
+      //      replace(copy(resource("/cassandra.yaml"), storageFile), ("%temp-dir%" -> (homeDirectory.getCanonicalPath + fileSep)))
+      //      copy(resource("/log4j.properties"), logFile)
 
+      loadSchemaFromYaml
       System.setProperty("storage-config", homeDirectory.getCanonicalPath)
-
       log.debug("creating data file and log location directories")
-      DatabaseDescriptor.getAllDataFileLocations.foreach { (file) => new File(file).mkdirs }
+      DatabaseDescriptor.getAllDataFileLocations.foreach {(file) => new File(file).mkdirs}
       // new File(DatabaseDescriptor.getLogFileLocation).mkdirs
 
       val daemon = new CassandraDaemonThread
@@ -56,16 +68,22 @@ object EmbeddedTestCassandra extends Logging {
 
       // try to make sockets until the server opens up - there has to be a better
       // way - just not sure what it is.
-      val socket = new TSocket("localhost", 9160);
+      Thread.sleep(3000)
+      log.debug("Sleep for 3s")
+
+      val socket = new TSocket("localhost", 9160)
       var opened = false
       while (!opened) {
         try {
           socket.open()
           opened = true
+          log.debug("I was able to make a connection")
+        }
+        catch {
+          case e: Throwable => log.error("******************** Not started", e)
+        }
+        finally {
           socket.close()
-        } catch {
-          case e:TTransportException => /* ignore */
-          case e:ConnectException => /* ignore */
         }
       }
 
@@ -73,7 +91,7 @@ object EmbeddedTestCassandra extends Logging {
     }
   }
 
-  private def resource(str:String) = classOf[CassandraTestPool].getResourceAsStream(str)
+  private def resource(str: String) = classOf[CassandraTestPool].getResourceAsStream(str)
 }
 
 /**
@@ -92,14 +110,14 @@ class CassandraDaemonThread extends Thread("CassandraDaemonThread") with Logging
 
   }
 
-  override def run:Unit = {
+  override def run: Unit = {
     log.debug("initializing cassandra daemon")
     daemon.init(new Array[String](0))
     log.debug("starting cassandra daemon")
     daemon.start
   }
 
-  def close():Unit = {
+  def close(): Unit = {
     log.debug("instructing cassandra deamon to shut down")
     daemon.stop
     log.debug("blocking on cassandra shutdown")

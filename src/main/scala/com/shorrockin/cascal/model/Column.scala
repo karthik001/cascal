@@ -17,7 +17,7 @@ import com.shorrockin.cascal.utils.Utils.now
  * @author Chris Shorrock
  * @param Owner the type of object which owns this column
  */
-case class Column[Owner](val name:ByteBuffer,val value:ByteBuffer,val time:Long,val owner:Owner) 
+case class Column[Owner](name:ByteBuffer,value:ByteBuffer,time:Long,owner:Owner)
 		extends Gettable[Column[Owner]] {
 
   def this(name:ByteBuffer, value:ByteBuffer, owner:Owner) = this(name, value, now, owner)
@@ -31,7 +31,7 @@ case class Column[Owner](val name:ByteBuffer,val value:ByteBuffer,val time:Long,
   val keyspace = key.keyspace
 
 	// columnParent
-	lazy val columnParent = new ColumnParent(family.value).setSuper_column(value)
+	lazy val columnParent = new ColumnParent(family.value)//.setSuper_column(value)
 
 	// thrift.Column
 	lazy val cassandraColumn = new CassColumn(name, value, time)
@@ -41,7 +41,7 @@ case class Column[Owner](val name:ByteBuffer,val value:ByteBuffer,val time:Long,
     owner match {
       case owner:SuperColumn => out.setColumn(name).setSuper_column(owner.value)
       case key:StandardKey   => out.setColumn(name)
-    }
+    }    
   }
 
   lazy val columnOrSuperColumn = {

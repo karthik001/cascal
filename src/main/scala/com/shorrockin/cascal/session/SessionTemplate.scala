@@ -70,6 +70,8 @@ trait SessionTemplate {
    */
   def count(container:ColumnContainer[_, _], predicate: Predicate):Int
 
+  def count(container:ColumnContainer[_, _]):Int
+
 
   /**
    * removes the specified column container

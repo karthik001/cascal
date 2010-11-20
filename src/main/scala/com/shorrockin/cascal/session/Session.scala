@@ -14,6 +14,7 @@ import com.shorrockin.cascal.model._
 
 import collection.immutable.HashSet
 import collection.JavaConversions._
+import collection.mutable.ListBuffer
 
 
 /**
@@ -22,21 +23,22 @@ import collection.JavaConversions._
  *
  * @author Chris Shorrock
  */
-class Session(val host:Host, val defaultConsistency:Consistency, val framedTransport:Boolean) 
-		extends SessionTemplate {
+class Session(val host: Host, val defaultConsistency: Consistency, val framedTransport: Boolean)
+        extends SessionTemplate {
 
-  def this(host:String, port:Int, timeout:Int, defaultConsistency:Consistency, framedTransport:Boolean) = 
-			this(Host(host, port, timeout), defaultConsistency, framedTransport)
+  def this(host: String, port: Int, timeout: Int, defaultConsistency: Consistency, framedTransport: Boolean) =
+    this (Host(host, port, timeout), defaultConsistency, framedTransport)
 
-  def this(host:String, port:Int, timeout:Int, defaultConsistency:Consistency) = 
-			this(host, port, timeout, defaultConsistency, false)
+  def this(host: String, port: Int, timeout: Int, defaultConsistency: Consistency) =
+    this (host, port, timeout, defaultConsistency, false)
 
-  def this(host:String, port:Int, timeout:Int) = 
-			this(host, port, timeout, Consistency.One, false)
+  def this(host: String, port: Int, timeout: Int) =
+    this (host, port, timeout, Consistency.One, false)
 
   private val sock = {
-    if (framedTransport) new TFramedTransport(new TSocket(host.address, host.port, host.timeout))
-    else new TSocket(host.address, host.port, host.timeout)
+//    if (framedTransport)
+      new TFramedTransport(new TSocket(host.address, host.port, host.timeout))
+//    else new TSocket(host.address, host.port, host.timeout)
   }
 
   private val protocol = new TBinaryProtocol(sock)
@@ -75,19 +77,19 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
   /**
    * return the current cluster name of the cassandra instance
    */
-  lazy val clusterName = "?"//client.get_string_property("cluster name")
+  lazy val clusterName = client.describe_cluster_name()
 
 
   /**
    * returns the configuration file of the connected cassandra instance
    */
-  lazy val configFile = "?"//client.get_string_property("config file")
+  lazy val configFile = "?" //client.get_string_property("config file")
 
 
   /**
    * returns the version of the cassandra instance
    */
-  lazy val version = "?"//client.get_string_property("version")
+  lazy val version = client.describe_version()
 
 
   /**
@@ -98,16 +100,19 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
   /**
    * returns the descriptors for all keyspaces
    */
-  lazy val keyspaceDescriptors: Set[Tuple3[String, String, String]] = {
-    var keyspaceDesc: Set[Tuple3[String, String, String]] = new HashSet[Tuple3[String, String, String]]
-    client.describe_keyspaces.foreach {space =>
-        val familyMap = client.describe_keyspace(space.name)
-        // familyMap.keySet foreach {family =>
-        //             keyspaceDesc = keyspaceDesc + ((space, family, familyMap.get(family).get("Type")))
-        //             ()
-        //         }
+  lazy val keyspaceDescriptors: List[Tuple3[String, String, String]] = {
+
+    if(!isOpen) open
+
+    val keyspaceDesc = new ListBuffer[Tuple3[String, String, String]]
+    val describekeyspaces = client.describe_keyspaces
+    describekeyspaces.foreach { space =>
+        val list = space.cf_defs
+        list.foreach { family =>
+            keyspaceDesc += ((space.name, family.name, family.column_type))
+        }
     }
-    keyspaceDesc
+    keyspaceDesc.toList
   }
 
   def verifyInsert[E](col: Column[E]) {
@@ -137,7 +142,7 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
    */
   def get[ResultType](col: Gettable[ResultType], consistency: Consistency): Option[ResultType] = detect {
     try {
-			// (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnPath,x$3: org.apache.cassandra.thrift.ConsistencyLevel)
+      // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnPath,x$3: org.apache.cassandra.thrift.ConsistencyLevel)
       val result = client.get(col.keyspace.value, col.columnPath, consistency)
       Some(col.convertGetResult(result))
     } catch {
@@ -157,8 +162,9 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
    */
   def insert[E](col: Column[E], consistency: Consistency) = detect {
     verifyInsert(col)
-		// (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.Column,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
-    client.insert(col.keyspace.value, col.columnParent, col.cassandraColumn, consistency)
+    // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.Column,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
+    client.set_keyspace(new String(col.keyspace.value.array))
+    client.insert(col.family.value, col.columnParent, col.cassandraColumn, consistency)
     col
   }
 
@@ -173,7 +179,7 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
    *   counts the number of columns in the specified column container
    */
   def count(container: ColumnContainer[_, _], predicate: Predicate, consistency: Consistency): Int = detect {
-		// org.apache.cassandra.thrift.ColumnParent
+    // org.apache.cassandra.thrift.ColumnParent
     client.get_count(container.keyspace.value, container.columnParent, predicate.slicePredicate, consistency)
   }
 
@@ -181,7 +187,11 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
   /**
    * performs count on the specified column container
    */
-  def count(container: ColumnContainer[_, _], predicate: Predicate): Int = count(container, predicate, defaultConsistency)
+  def count(container: ColumnContainer[_, _], predicate: Predicate): Int =
+    count(container, predicate, defaultConsistency)
+
+  def count(container: ColumnContainer[_, _]): Int =
+    count(container, RangePredicate("", ""), defaultConsistency)
 
 
   /**
@@ -189,7 +199,7 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
    */
   def remove(container: ColumnContainer[_, _], consistency: Consistency): Unit = detect {
     verifyRemove(container)
-		//  (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnPath,x$3: Long,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
+    //  (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnPath,x$3: Long,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
     client.remove(container.keyspace.value, container.columnPath, now, consistency)
   }
 
@@ -204,7 +214,7 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
    * removes the specified column container
    */
   def remove(column: Column[_], consistency: Consistency): Unit = detect {
-		// (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnPath,x$3: Long,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
+    // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnPath,x$3: Long,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
     client.remove(column.keyspace.value, column.columnPath, now, consistency)
   }
 
@@ -220,8 +230,9 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
    * to determine which columns to return.
    */
   def list[ResultType](container: ColumnContainer[_, ResultType], predicate: Predicate, consistency: Consistency): ResultType = detect {
-		// (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.SlicePredicate,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
-    val results = client.get_slice(container.keyspace.value, container.columnParent, predicate.slicePredicate, consistency)
+    // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.SlicePredicate,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
+
+    val results = client.get_slice(container.family.value, container.columnParent, predicate.slicePredicate, consistency)
     container.convertListResult(results)
   }
 
@@ -235,8 +246,8 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
   /**
    * performs a list of the specified container using the specified predicate value
    */
-  def list[ResultType](container: ColumnContainer[_, ResultType], predicate: Predicate): ResultType = 
-			list(container, predicate, defaultConsistency)
+  def list[ResultType](container: ColumnContainer[_, ResultType], predicate: Predicate): ResultType =
+    list(container, predicate, defaultConsistency)
 
 
   /**
@@ -252,18 +263,19 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
     if (containers.size > 0) detect {
       val firstContainer = containers(0)
       val keyspace = firstContainer.keyspace
-      val keyStrings = containers.map {k=>ByteBuffer.wrap(k.key.value.getBytes)}.asInstanceOf[Seq[ByteBuffer]]
+      val keyStrings = containers.map {k => ByteBuffer.wrap(k.key.value.getBytes)}.asInstanceOf[Seq[ByteBuffer]]
 
 
-			// (x$1: java.util.List[java.nio.ByteBuffer],x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.SlicePredicate,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
-      val results = client.multiget_slice( toJavaList(keyStrings), firstContainer.columnParent, predicate.slicePredicate, consistency)
+      // (x$1: java.util.List[java.nio.ByteBuffer],x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.SlicePredicate,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
+      val results = client.multiget_slice(toJavaList(keyStrings), firstContainer.columnParent, predicate.slicePredicate, consistency)
 
       def locate(key: String) = (containers.find {_.key.value.equals(key)}).get
 
-      results.map { (tuple) =>
-        val key   = locate(tuple._1)
-        val value = key.convertListResult(tuple._2)
-        (key -> value)
+      results.map {
+        (tuple) =>
+          val key = locate(tuple._1)
+          val value = key.convertListResult(tuple._2)
+          (key -> value)
       }.toSeq
     } else {
       throw new IllegalArgumentException("must provide at least 1 container for a list(keys, predicate, consistency) call")
@@ -289,13 +301,14 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
    * of tokens. This list call is only available when using an order-preserving partition.
    */
   def list[ColumnType, ListType](family: ColumnFamily[Key[ColumnType, ListType]], range: KeyRange, predicate: Predicate, consistency: Consistency): Map[Key[ColumnType, ListType], ListType] = detect {
-		// (x$1: org.apache.cassandra.thrift.ColumnParent,x$2: org.apache.cassandra.thrift.SlicePredicate,x$3: org.apache.cassandra.thrift.KeyRange,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
+    // (x$1: org.apache.cassandra.thrift.ColumnParent,x$2: org.apache.cassandra.thrift.SlicePredicate,x$3: org.apache.cassandra.thrift.KeyRange,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
     val results = client.get_range_slices(family.columnParent, predicate.slicePredicate, range.cassandraRange, consistency)
     var map = Map[Key[ColumnType, ListType], ListType]()
 
-    results.foreach { (keyslice) =>
-      val key = (family \ keyslice.key)
-      map = map + (key -> key.convertListResult(keyslice.columns))
+    results.foreach {
+      (keyslice) =>
+        val key = (family \ keyslice.key)
+        map = map + (key -> key.convertListResult(keyslice.columns))
     }
     map
   }
@@ -325,31 +338,31 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
   def batch(ops: Seq[Operation], consistency: Consistency): Unit = {
     if (ops.size > 0) detect {
       val keyToFamilyMutations = new HashMap[ByteBuffer, JMap[String, JList[Mutation]]]()
-			//       val keyspace = ops(0).keyspace
-			// 
-			//       def getOrElse[A, B](map: JMap[A, B], key: A, f: => B): B = {
-			//         if (map.containsKey(key)) {
-			//           map.get(key)
-			//         } else {
-			//           val newValue = f
-			//           map.put(key, newValue)
-			//           newValue
-			//         }
-			//       }
-			// 
-			//       ops.foreach {
-			//         (op) =>
-			//           verifyOperation(op)
-			//           val familyToMutations = getOrElse(keyToFamilyMutations, op.key.value, new HashMap[String, JList[Mutation]]())
-			//           val mutationList = getOrElse(familyToMutations, op.family.value, new ArrayList[Mutation]())
-			//           mutationList.add(op.mutation)
-			//       }
-			// 
-			//       // TODO may need to flatten duplicate super columns?
-			// 
-			// 
-			// // (x$1: java.util.Map[java.nio.ByteBuffer,java.util.Map[java.lang.String,java.util.List[org.apache.cassandra.thrift.Mutation]]],x$2: org.apache.cassandra.thrift.ConsistencyLevel)
-			//       client.batch_mutate(keyToFamilyMutations, consistency)
+      //       val keyspace = ops(0).keyspace
+      //
+      //       def getOrElse[A, B](map: JMap[A, B], key: A, f: => B): B = {
+      //         if (map.containsKey(key)) {
+      //           map.get(key)
+      //         } else {
+      //           val newValue = f
+      //           map.put(key, newValue)
+      //           newValue
+      //         }
+      //       }
+      //
+      //       ops.foreach {
+      //         (op) =>
+      //           verifyOperation(op)
+      //           val familyToMutations = getOrElse(keyToFamilyMutations, op.key.value, new HashMap[String, JList[Mutation]]())
+      //           val mutationList = getOrElse(familyToMutations, op.family.value, new ArrayList[Mutation]())
+      //           mutationList.add(op.mutation)
+      //       }
+      //
+      //       // TODO may need to flatten duplicate super columns?
+      //
+      //
+      // // (x$1: java.util.Map[java.nio.ByteBuffer,java.util.Map[java.lang.String,java.util.List[org.apache.cassandra.thrift.Mutation]]],x$2: org.apache.cassandra.thrift.ConsistencyLevel)
+      //       client.batch_mutate(keyToFamilyMutations, consistency)
     } else {
       throw new IllegalArgumentException("cannot perform batch operation on 0 length operation sequence")
     }
@@ -378,8 +391,8 @@ class Session(val host:Host, val defaultConsistency:Consistency, val framedTrans
     case t: Throwable => lastError = Some(t); throw t
   }
 
-  private def Buffer[T](v:java.util.List[T]) = {
-	 scala.collection.JavaConversions.asBuffer(v)
+  private def Buffer[T](v: java.util.List[T]) = {
+    scala.collection.JavaConversions.asBuffer(v)
   }
   // 
   // implicit private def convertList[T](v:java.util.List[T]):List[T] = {

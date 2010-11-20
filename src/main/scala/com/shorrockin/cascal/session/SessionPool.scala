@@ -32,19 +32,19 @@ class SessionPool(val hosts:Seq[Host], val params:PoolParams, consistency:Consis
 
   private val pool = {
     val factory = new GenericObjectPoolFactory(SessionFactory,
-                                               params.maxActive,
-                                               params.exhaustionPolicy.value,
-                                               params.maxWait,
-                                               params.maxIdle,
-                                               params.minIdle,
-                                               params.testOnBorrow,
-                                               params.testOnReturn,
-                                               params.timeBetweenEvictionsRunsMillis,
-                                               params.numTestsPerEvictionRuns,
-                                               params.minEvictableIdleTimeMillis,
-                                               params.testWhileIdle,
-                                               params.softMinEvictableIdleTimeMillis,
-                                               params.lifo)
+		    params.maxActive,
+		    params.exhaustionPolicy.value,
+		    params.maxWait,
+		    params.maxIdle,
+		    params.minIdle,
+		    params.testOnBorrow,
+		    params.testOnReturn,
+		    params.timeBetweenEvictionsRunsMillis,
+		    params.numTestsPerEvictionRuns,
+		    params.minEvictableIdleTimeMillis,
+		    params.testWhileIdle,
+		    params.softMinEvictableIdleTimeMillis,
+		    params.lifo)
     factory.createPool
   }
 
@@ -182,6 +182,8 @@ class SessionPool(val hosts:Seq[Host], val params:PoolParams, consistency:Consis
 
   def count(container:ColumnContainer[_, _], predicate: Predicate):Int = borrow { _.count(container,predicate) }
 
+  def count(container:ColumnContainer[_, _]):Int = borrow { _.count(container) }
+
   def remove(container:ColumnContainer[_, _], consistency:Consistency):Unit = borrow { _.remove(container, consistency) }
 
   def remove(container:ColumnContainer[_, _]):Unit = borrow { _.remove(container) }
@@ -248,33 +250,34 @@ object ExhaustionPolicy {
  * @author Chris Shorrock
  */
 case class PoolParams(maxActive:Int,
-                      exhaustionPolicy:ExhaustionPolicy,
-                      maxWait:Long,
-                      maxIdle:Int,
-                      minIdle:Int,
-                      testOnBorrow:Boolean,
-                      testOnReturn:Boolean,
-                      timeBetweenEvictionsRunsMillis:Long,
-                      numTestsPerEvictionRuns:Int,
-                      minEvictableIdleTimeMillis:Long,
-                      testWhileIdle:Boolean,
-                      softMinEvictableIdleTimeMillis:Long,
-                      lifo:Boolean) {
+		  exhaustionPolicy:ExhaustionPolicy,
+		  maxWait:Long,
+		  maxIdle:Int,
+		  minIdle:Int,
+		  testOnBorrow:Boolean,
+		  testOnReturn:Boolean,
+		  timeBetweenEvictionsRunsMillis:Long,
+		  numTestsPerEvictionRuns:Int,
+		  minEvictableIdleTimeMillis:Long,
+		  testWhileIdle:Boolean,
+		  softMinEvictableIdleTimeMillis:Long,
+		  lifo:Boolean) {
   def this(maxActive:Int,
-           exhaustionPolicy:ExhaustionPolicy,
-           maxWait:Long,
-           maxIdle:Int,
-           minIdle:Int) = this(maxActive,
-                               exhaustionPolicy,
-                               maxWait,
-                               maxIdle,
-                               minIdle,
-                               true,
-                               true,
-                               GenericObjectPool.DEFAULT_TIME_BETWEEN_EVICTION_RUNS_MILLIS,
-                               GenericObjectPool.DEFAULT_NUM_TESTS_PER_EVICTION_RUN,
-                               GenericObjectPool.DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS ,
-                               GenericObjectPool.DEFAULT_TEST_WHILE_IDLE,
-                               GenericObjectPool.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME_MILLIS,
-                               true)
-}
+      exhaustionPolicy:ExhaustionPolicy,
+      maxWait:Long,
+      maxIdle:Int,
+      minIdle:Int) = 
+		this(maxActive,
+	        exhaustionPolicy,
+	        maxWait,
+	        maxIdle,
+	        minIdle,
+	        true,
+	        true,
+	        GenericObjectPool.DEFAULT_TIME_BETWEEN_EVICTION_RUNS_MILLIS,
+	        GenericObjectPool.DEFAULT_NUM_TESTS_PER_EVICTION_RUN,
+	        GenericObjectPool.DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS ,
+	        GenericObjectPool.DEFAULT_TEST_WHILE_IDLE,
+	        GenericObjectPool.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME_MILLIS,
+	        true)
+	}
