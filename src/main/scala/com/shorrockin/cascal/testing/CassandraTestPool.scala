@@ -28,8 +28,12 @@ object EmbeddedTestCassandra extends Logging {
 
   val hosts = Host("localhost", 9160, 250) :: Nil
   val params = new PoolParams(10, ExhaustionPolicy.Fail, 500L, 6, 2)
-  lazy val pool = new SessionPool(hosts, params, Consistency.One)
+  lazy val pool = new SessionPool("Test", hosts, params, Consistency.One)
 
+  /**
+   * For cassandra 0.7, you need to explicitly load the schema.  This was copied from
+   * org.apache.cassandra.SchemaLoader
+   */
   def loadSchemaFromYaml = {
     import collection.JavaConversions._
     

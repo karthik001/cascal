@@ -11,13 +11,15 @@ class TestBatchOperations extends CassandraTestPool {
   import Assert._
 
   @Test def testStandardBatchInsertion = borrow { (s) =>
-    val key  = "Test" \ "Standard" \ UUID()
+    val family  = "Test" \ "Standard"
+    val key = family \ UUID()
     val col1 = key \ ("Column-1", "Value-1")
     val col2 = key \ ("Column-2", "Value-2")
     val col3 = key \ ("Column-3", "Value-3")
 
     s.batch(Insert(col1) :: Insert(col2) :: Insert(col3))
 
+    println("owner: %s".format(col1.owner))
     assertEquals(3, s.list(col1.owner).size)
   }
 

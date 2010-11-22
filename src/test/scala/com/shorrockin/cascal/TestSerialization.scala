@@ -6,34 +6,16 @@ import serialization.{LongSerializer, DateSerializer, Converter}
 import utils.Conversions
 import org.junit.{Assert, Test}
 
-@Keyspace("Test") @Family("Standard")
-case class MappedStandard(@Key val a:Long, @Value("Column-B") val b:Date, @Value("Column-C") val c:Long)
-
-@Keyspace("Test") @Family("Standard")
-case class DynamicMappedStandard(@Key val key:Long,
-                                 @Columns(name=classOf[String], value=classOf[Int]) values:Seq[(String, Int)])
-
-@Keyspace("Test") @Family("Super") @Super
-case class MappedSuper(@Key val a:String, @SuperColumn val s:String, @Value("Column-B") val b:Date, @Value("Column-C") val c:Long)
-
-@Keyspace("Test") @Family("Super") @Super
-case class MappedSuperWithCols(@Key val a:String, @SuperColumn val s:String, @Columns(name=classOf[String], value=classOf[Long]) raw:Seq[(String, Long)]) {
-  val values = raw.map { _._1 }
-}
-
-@Keyspace("Test") @Family("Standard")
-case class MappedOptionStandard(@Optional(column="Column", as=classOf[Long]) val value:Option[Long])
-
-@Keyspace("Test") @Family("Super") @Super
-case class MappedOptionSuper(@Optional(column="C", as=classOf[String]) val value:Option[String])
-
+/**
+ *
+ */
 class TestSerialization {
   import Conversions._
   import Assert._
 
   @Test def testCanConvertFromColumnsToMappedStandard() {
     val now  = new Date
-    val key  = "Test" \ "Standard" \ "876"
+    val key  = "Test" \ "Standard" \ 876L
     val colb = key \ "Column-B" \ now
     val colc = key \ "Column-C" \ 12L
     val cols = colc :: colb
@@ -47,7 +29,7 @@ class TestSerialization {
 
   @Test def testCanConvertDynamicMapValue() {
     val now  = new Date
-    val key  = "Test" \ "Standard" \ "12345"
+    val key  = "Test" \ "Standard" \ 12345L
     val colb = key \ "Column-B" \ 123
     val colc = key \ "Column-C" \ 12
     val cols = colc :: colb
@@ -117,3 +99,26 @@ class TestSerialization {
 
   }
 }
+
+
+
+@Keyspace("Test") @Family("Standard")
+case class MappedStandard(@Key a:Long, @Value("Column-B") b:Date, @Value("Column-C") c:Long)
+
+@Keyspace("Test") @Family("Standard")
+case class DynamicMappedStandard(@Key key:Long, @Columns(name=classOf[String], value=classOf[Int]) values:Seq[(String, Int)])
+
+@Keyspace("Test") @Family("Super") @Super
+case class MappedSuper(@Key a:String, @SuperColumn s:String, @Value("Column-B") b:Date, @Value("Column-C") c:Long)
+
+@Keyspace("Test") @Family("Super") @Super
+case class MappedSuperWithCols(@Key a:String, @SuperColumn s:String, @Columns(name=classOf[String], value=classOf[Long]) raw:Seq[(String, Long)]) {
+  val values = raw.map { _._1 }
+}
+
+@Keyspace("Test") @Family("Standard")
+case class MappedOptionStandard(@Optional(column="Column", as=classOf[Long]) value:Option[Long])
+
+@Keyspace("Test") @Family("Super") @Super
+case class MappedOptionSuper(@Optional(column="C", as=classOf[String]) value:Option[String])
+

@@ -16,6 +16,7 @@ class TestUUIDByteConversion extends CassandraTestPool {
 
   @Test def ensureUUIDConvertsToFromBytes = {
     val original = UUID()
+    assertEquals(16,Conversions.bytes(original).array.length)
     assertEquals(original, UUID(Conversions.bytes(original).array))
   }
 
@@ -39,4 +40,4 @@ class TestUUIDByteConversion extends CassandraTestPool {
 }
 
 @Keyspace("Test") @Family("Super") @Super
-case class MappedUUID(@Key val a:String, @SuperColumn val s:JavaUUID, @Value("Column") val b:String)
+case class MappedUUID(@Key a:String, @SuperColumn s:JavaUUID, @Value("Column") b:String)

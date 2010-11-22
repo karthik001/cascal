@@ -14,8 +14,8 @@ class TestPathComposition {
     val out = "Keyspace" \ "StandardFamily" \ "StandardKey" \ "Column" \ "ColumnValue"
     assertEquals("ColumnValue", string(out.value))
     assertEquals("Column", string(out.name))
-    assertEquals("StandardKey", out.owner.value)
-    assertEquals("StandardKey", out.key.value)
+    assertEquals("StandardKey", string(out.owner.value))
+    assertEquals("StandardKey", string(out.key.value))
     assertEquals("StandardFamily", out.family.value)
     assertEquals("Keyspace", out.keyspace.value)
   }
@@ -25,7 +25,7 @@ class TestPathComposition {
     assertEquals("ColumnValue", string(out.value))
     assertEquals("Column", string(out.name))
     assertEquals("SuperColumn", string(out.owner.value))
-    assertEquals("SuperKey", out.key.value)
+    assertEquals("SuperKey", string(out.key.value))
     assertEquals("SuperFamily", out.family.value)
     assertEquals("Keyspace", out.keyspace.value)
   }

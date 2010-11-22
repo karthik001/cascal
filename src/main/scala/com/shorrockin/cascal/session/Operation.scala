@@ -24,7 +24,7 @@ trait Operation {
  *
  * @author Chris Shorrock
  */
-case class Insert(val column:Column[_]) extends Operation {
+case class Insert(column:Column[_]) extends Operation {
   lazy val mutation = new Mutation().setColumn_or_supercolumn(column.columnOrSuperColumn)
   val family = column.family
   val key = column.key

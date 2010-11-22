@@ -17,21 +17,21 @@ import com.shorrockin.cascal.utils.Utils.now
  * @author Chris Shorrock
  * @param Owner the type of object which owns this column
  */
-case class Column[Owner](name:ByteBuffer,value:ByteBuffer,time:Long,owner:Owner)
+// TODO owner can be SuperKey, StandardKey SuperColumn, or StandardColumn
+case class Column[Owner](name: ByteBuffer, value: ByteBuffer, time: Long = now, owner: Owner)
 		extends Gettable[Column[Owner]] {
 
-  def this(name:ByteBuffer, value:ByteBuffer, owner:Owner) = this(name, value, now, owner)
-  def this(name:ByteBuffer, owner:Owner) = this(name, null, now, owner)
-  def this(name:ByteBuffer, value:ByteBuffer, date:Date, owner:Owner) = this(name, value, date.getTime, owner)
+  val partial = (value == null)
+  val key = owner.asInstanceOf[ColumnContainer[_, _]].key
+  val family = key.family
 
-
-  val partial  = (value == null)
-  val key      = owner.asInstanceOf[ColumnContainer[_, _]].key
-  val family   = key.family
   val keyspace = key.keyspace
 
 	// columnParent
-	lazy val columnParent = new ColumnParent(family.value)//.setSuper_column(value)
+	lazy val columnParent = if(owner.isInstanceOf[SuperColumn])
+      new ColumnParent(family.value).setSuper_column(owner.asInstanceOf[SuperColumn].value)
+    else
+      new ColumnParent(family.value)
 
 	// thrift.Column
 	lazy val cassandraColumn = new CassColumn(name, value, time)
@@ -67,7 +67,6 @@ case class Column[Owner](name:ByteBuffer,value:ByteBuffer,time:Long,owner:Owner)
    */
   def ::(other:Column[Owner]):List[Column[Owner]] = other :: this :: Nil
 
-
   /**
    * given the cassandra object returned from retrieving this object,
    * returns an instance of our return type.
@@ -83,6 +82,6 @@ case class Column[Owner](name:ByteBuffer,value:ByteBuffer,time:Long,owner:Owner)
     try { Conversions.string(a) } catch { case _ => a.toString }
   }
 
-  override def toString():String = "%s \\ Column(name = %s, value = %s, time = %s)".format(
-      owner.toString, stringIfPossible(name), stringIfPossible(value), time)
+  override def toString = "%s \\ Column(name = '%s', value = '%s', time = '%s')".
+          format(owner.toString, stringIfPossible(name), stringIfPossible(value), time)
 }

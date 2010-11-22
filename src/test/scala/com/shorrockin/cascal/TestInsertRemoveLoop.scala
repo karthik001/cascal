@@ -18,7 +18,10 @@ class TestInsertRemoveLoop extends CassandraTestPool {
       var onLowPrecisionSystem = false
       for( i <- 1L to 100L ) {
         session.remove("Test" \ "Standard" \ "Test")
-        session.insert("Test" \ "Standard" \ "Test" \ (i, "hello:"+i))
+        val column = "Test" \ "Standard" \ "Test" \ (i, "hello:" + i)
+        println("column: %s".format(column))
+        session.insert(column)
+
         if( session.get("Test" \ "Standard" \ "Test" \ i) == None ) {
           onLowPrecisionSystem = true
         }

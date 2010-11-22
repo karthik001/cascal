@@ -17,10 +17,10 @@ trait SessionTemplate {
   def clusterName:String
 
 
-  /**
-   * returns the configuration file of the connected cassandra instance
-   */
-  def configFile:String
+//  /**
+//   * returns the configuration file of the connected cassandra instance
+//   */
+//  def configFile:String
 
 
   /**

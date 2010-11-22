@@ -56,7 +56,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
 
       annotation match {
         // if there's a columnsToKey annotation get the first columnsToKey in the columns and return it
-        case k:AKey => stringToObject(cls, columnsToKey(columns).value)
+        case k:AKey => bytesToObject(cls, columnsToKey(columns).value)
 
         // if there's a super column annotation get the super column then use the serializers
         // to convert the byte array to the appropriate value.
@@ -147,10 +147,10 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
   def unapply[T](obj:T)(implicit manifest:Manifest[T]):Seq[Column[_]] = {
     val info = Converter.this.info(manifest.erasure)
 
-    val key:String = info.fieldGettersAndColumnNames.filter(tup => tup._2._2 match {
+    val key:ByteBuffer = info.fieldGettersAndColumnNames.filter(tup => tup._2._2 match {
       case a:AKey => true
       case _ => false
-    }).head._1.invoke(obj).asInstanceOf[String]
+    }).head._1.invoke(obj).asInstanceOf[ByteBuffer]
 
     var superCol:ByteBuffer = null
     if (info.isSuper) {

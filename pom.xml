@@ -4,7 +4,7 @@
 	<groupId>com.shorrockin</groupId>
 	<artifactId>cascal</artifactId>
 	<packaging>jar</packaging>
-	<version>1.3-SNAPSHOT</version>
+	<version>0.7.0-SNAPSHOT</version>
 	<name>Cascal - Simple Cassandra Scala Client Library</name>
 	<inceptionYear>2010</inceptionYear>
 	<url>http://github.com/shorrockin/cascal</url>
@@ -272,16 +272,14 @@
 			<dependency>
 	      <groupId>com.reardencommerce</groupId>
 	      <artifactId>clhm</artifactId>
-	      <version>UNKNOWN</version>
-	      <scope>system</scope>
-	      <systemPath>${basedir}/lib/clhm-production.jar</systemPath>
+	      <version>0.7.0-beta3</version>
+	      <scope>test</scope>
 	    </dependency>
 			<dependency>
 	      <groupId>org.apcahe.avro</groupId>
 	      <artifactId>avro</artifactId>
-	      <version>UNKNOWN</version>
-	      <scope>system</scope>
-	      <systemPath>${basedir}/lib/avro-1.4.0-fixes.jar</systemPath>
+	      <version>1.4.0-fixes</version>
+	      <scope>test</scope>
 	    </dependency>
 			<dependency>
 	      <groupId>org.mortbay.jetty</groupId>

@@ -4,7 +4,7 @@ import org.apache.commons.pool.PoolableObjectFactory
 import org.apache.commons.pool.impl.{GenericObjectPoolFactory, GenericObjectPool}
 import com.shorrockin.cascal.utils.Logging
 import com.shorrockin.cascal.jmx.CascalStatistics
-import com.shorrockin.cascal.model._
+
 
 
 /**
@@ -19,14 +19,12 @@ import com.shorrockin.cascal.model._
  *
  * @author Chris Shorrock
  */
-class SessionPool(val hosts:Seq[Host], val params:PoolParams, consistency:Consistency, framedTransport:Boolean) 
-		extends SessionTemplate {
+class SessionPool(val keySpace:String,
+        val hosts:Seq[Host],
+        val params:PoolParams,
+        consistency:Consistency = Consistency.One,
+        framedTransport:Boolean = false) {
 			
-  def this(hosts:Seq[Host], params:PoolParams, consistency:Consistency) = 
-		this(hosts, params, consistency, false)
-
-  def this(hosts:Seq[Host], params:PoolParams) = 
-		this(hosts, params, Consistency.One, false)
 
   CascalStatistics.register(this)
 
@@ -135,7 +133,7 @@ class SessionPool(val hosts:Seq[Host], val params:PoolParams, consistency:Consis
 
         try {
           log.debug("attempting to create connection to: " + host)
-          val session = new Session(host.address, host.port, host.timeout, consistency, framedTransport)
+          val session = new Session(keySpace,host, consistency, framedTransport)
           session.open
           CascalStatistics.creation(host)
           session
@@ -161,58 +159,6 @@ class SessionPool(val hosts:Seq[Host], val params:PoolParams, consistency:Consis
     def passivateObject(obj:Object):Unit = {}
   }
 
-
-  def clusterName:String = borrow { _.clusterName }
-
-  def configFile:String = borrow { _.configFile }
-
-  def version:String = borrow { _.version }
-
-  def keyspaces:Seq[String] = borrow { _.keyspaces }
-
-  def get[ResultType](col:Gettable[ResultType], consistency:Consistency):Option[ResultType] = borrow { _.get(col, consistency) }
-
-  def get[ResultType](col:Gettable[ResultType]):Option[ResultType] = borrow { _.get(col) }
-
-  def insert[E](col:Column[E], consistency:Consistency):Column[E] = borrow { _.insert(col, consistency) }
-
-  def insert[E](col:Column[E]):Column[E] = borrow { _.insert(col) }
-
-  def count(container:ColumnContainer[_ ,_], predicate: Predicate, consistency:Consistency):Int = borrow { _.count(container, predicate,consistency) }
-
-  def count(container:ColumnContainer[_, _], predicate: Predicate):Int = borrow { _.count(container,predicate) }
-
-  def count(container:ColumnContainer[_, _]):Int = borrow { _.count(container) }
-
-  def remove(container:ColumnContainer[_, _], consistency:Consistency):Unit = borrow { _.remove(container, consistency) }
-
-  def remove(container:ColumnContainer[_, _]):Unit = borrow { _.remove(container) }
-
-  def remove(column:Column[_], consistency:Consistency):Unit = borrow { _.remove(column, consistency) }
-
-  def remove(column:Column[_]):Unit = borrow { _.remove(column) }
-
-  def list[ResultType](container:ColumnContainer[_, ResultType], predicate:Predicate, consistency:Consistency):ResultType = borrow { _.list(container, predicate, consistency) }
-
-  def list[ResultType](container:ColumnContainer[_, ResultType]):ResultType = borrow { _.list(container) }
-
-  def list[ResultType](container:ColumnContainer[_, ResultType], predicate:Predicate):ResultType = borrow { _.list(container, predicate) }
-
-  def list[ColumnType, ResultType](containers:Seq[ColumnContainer[ColumnType, ResultType]], predicate:Predicate, consistency:Consistency):Seq[(ColumnContainer[ColumnType, ResultType], ResultType)] = borrow { _.list(containers, predicate, consistency) }
-
-  def list[ColumnType, ResultType](containers:Seq[ColumnContainer[ColumnType, ResultType]]):Seq[(ColumnContainer[ColumnType, ResultType], ResultType)] = borrow { _.list(containers) }
-
-  def list[ColumnType, ResultType](containers:Seq[ColumnContainer[ColumnType, ResultType]], predicate:Predicate):Seq[(ColumnContainer[ColumnType, ResultType], ResultType)] = borrow { _.list(containers, predicate) }
-
-  def list[ColumnType, ListType](family:ColumnFamily[Key[ColumnType, ListType]], range:KeyRange, predicate:Predicate, consistency:Consistency):Map[Key[ColumnType, ListType], ListType] = borrow { _.list(family, range, predicate, consistency) }
-
-  def list[ColumnType, ListType](family:ColumnFamily[Key[ColumnType, ListType]], range:KeyRange, consistency:Consistency):Map[Key[ColumnType, ListType], ListType] = borrow { _.list(family, range, consistency) }
-
-  def list[ColumnType, ListType](family:ColumnFamily[Key[ColumnType, ListType]], range:KeyRange):Map[Key[ColumnType, ListType], ListType] = borrow { _.list(family, range) }
-
-  def batch(ops:Seq[Operation], consistency:Consistency):Unit = borrow { _.batch(ops, consistency) }
-
-  def batch(ops:Seq[Operation]):Unit = borrow { _.batch(ops) }
 }
 
 
@@ -254,30 +200,11 @@ case class PoolParams(maxActive:Int,
 		  maxWait:Long,
 		  maxIdle:Int,
 		  minIdle:Int,
-		  testOnBorrow:Boolean,
-		  testOnReturn:Boolean,
-		  timeBetweenEvictionsRunsMillis:Long,
-		  numTestsPerEvictionRuns:Int,
-		  minEvictableIdleTimeMillis:Long,
-		  testWhileIdle:Boolean,
-		  softMinEvictableIdleTimeMillis:Long,
-		  lifo:Boolean) {
-  def this(maxActive:Int,
-      exhaustionPolicy:ExhaustionPolicy,
-      maxWait:Long,
-      maxIdle:Int,
-      minIdle:Int) = 
-		this(maxActive,
-	        exhaustionPolicy,
-	        maxWait,
-	        maxIdle,
-	        minIdle,
-	        true,
-	        true,
-	        GenericObjectPool.DEFAULT_TIME_BETWEEN_EVICTION_RUNS_MILLIS,
-	        GenericObjectPool.DEFAULT_NUM_TESTS_PER_EVICTION_RUN,
-	        GenericObjectPool.DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS ,
-	        GenericObjectPool.DEFAULT_TEST_WHILE_IDLE,
-	        GenericObjectPool.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME_MILLIS,
-	        true)
-	}
+		  testOnBorrow:Boolean = true,
+		  testOnReturn:Boolean = true,
+		  timeBetweenEvictionsRunsMillis:Long = GenericObjectPool.DEFAULT_TIME_BETWEEN_EVICTION_RUNS_MILLIS,
+		  numTestsPerEvictionRuns:Int = GenericObjectPool.DEFAULT_NUM_TESTS_PER_EVICTION_RUN,
+		  minEvictableIdleTimeMillis:Long = GenericObjectPool.DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS ,
+		  testWhileIdle:Boolean = GenericObjectPool.DEFAULT_TEST_WHILE_IDLE,
+		  softMinEvictableIdleTimeMillis:Long = GenericObjectPool.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME_MILLIS,
+		  lifo:Boolean = true)

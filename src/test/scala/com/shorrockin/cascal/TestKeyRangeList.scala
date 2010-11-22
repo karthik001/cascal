@@ -1,7 +1,7 @@
 package com.shorrockin.cascal
 
 import testing._
-import model.{ColumnFamily, Key, StandardKey}
+import model.StandardKey
 import org.junit.{Assert, Test}
 import session.{Consistency, EmptyPredicate, KeyRange}
 import utils.Conversions

@@ -1,6 +1,7 @@
 package com.shorrockin.cascal.model
 
 import org.apache.cassandra.thrift.ColumnParent
+import java.nio.ByteBuffer
 
 /**
  * high level abstraction for a column family. can be considered the 2nd
@@ -14,6 +15,6 @@ trait ColumnFamily[+KeyType] extends StringValue {
   val keyspace:Keyspace
   lazy val columnParent = new ColumnParent().setColumn_family(value)
   
-  def \(value:String):KeyType
+  def \(value:ByteBuffer):KeyType
 
 }

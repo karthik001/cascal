@@ -1,16 +1,21 @@
 package com.shorrockin.cascal.model
 
 import java.nio.ByteBuffer
-import org.apache.cassandra.thrift.{ColumnOrSuperColumn}
+import org.apache.cassandra.thrift.{ColumnParent, ColumnPath, ColumnOrSuperColumn}
 
 /**
- *
+ *@author Chris Shorrock, Michael Fortin
  */
-case class SuperKey(val value:String, val family:SuperColumnFamily) 
+case class SuperKey(valueIn:ByteBuffer, family:SuperColumnFamily)
 		extends Key[SuperColumn, Seq[(SuperColumn, Seq[Column[SuperColumn]])]] {
 
-  def \(value:ByteBuffer) = new SuperColumn(value, this)
+  def \(v:ByteBuffer) = new SuperColumn(v, this)
 
+  val value = {
+    valueIn.rewind
+    valueIn
+  }
+  
   /**
    *  converts a list of super columns to the specified return type
    */

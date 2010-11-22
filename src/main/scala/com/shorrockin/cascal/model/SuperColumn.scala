@@ -12,13 +12,13 @@ import com.shorrockin.cascal.utils.Conversions
  *
  * @author Chris Shorrock
  */
-case class SuperColumn(val value:ByteBuffer, val key:SuperKey) 
+case class SuperColumn(value:ByteBuffer, key:SuperKey) 
 		extends Gettable[Seq[Column[SuperColumn]]]()
     with StandardColumnContainer[Column[SuperColumn], Seq[Column[SuperColumn]]] {
 	
-  def \(name:ByteBuffer) = new Column(name, this)
-  def \(name:ByteBuffer, value:ByteBuffer) = new Column(name, value, this)
-  def \(name:ByteBuffer, value:ByteBuffer, time:Long) = new Column(name, value, time, this)
+  def \(name:ByteBuffer) = new Column(name=name, value=null, owner=this)
+  def \(name:ByteBuffer, value:ByteBuffer) = new Column(name=name, value=value, owner=this)
+  def \(name:ByteBuffer, value:ByteBuffer, time:Long) = new Column(name=name, value=value, time=time, owner=this)
 
   val family = key.family
   val keyspace = family.keyspace
@@ -60,5 +60,5 @@ case class SuperColumn(val value:ByteBuffer, val key:SuperKey)
   }
 
   override def toString():String = "%s \\ SuperColumn(value = %s)".format(
-      key.toString, stringIfPossible(value))
+      key.toString, value)
 }
