@@ -3,7 +3,7 @@ package com.shorrockin.cascal.model
 import java.util.Date
 import java.nio.ByteBuffer
 
-import org.apache.cassandra.thrift.{ColumnPath, ColumnOrSuperColumn,Column => CassColumn}
+import org.apache.cassandra.thrift.{ColumnPath, ColumnOrSuperColumn, Column => CassColumn}
 import org.apache.cassandra.thrift.{ColumnParent, SuperColumn => CassSuperColumn}
 
 import com.shorrockin.cascal.utils.Conversions
@@ -17,69 +17,64 @@ import com.shorrockin.cascal.utils.Utils.now
  * @author Chris Shorrock
  * @param Owner the type of object which owns this column
  */
-// TODO owner can be SuperKey, StandardKey SuperColumn, or StandardColumn
-case class Column[Owner](name: ByteBuffer, value: ByteBuffer, time: Long = now, owner: Owner)
-		extends Gettable[Column[Owner]] {
-
+case class Column(name: ByteBuffer, value: ByteBuffer, time: Long = now, owner: ColumnContainer[_, _])
+        extends Gettable[Column] {
   val partial = (value == null)
-  val key = owner.asInstanceOf[ColumnContainer[_, _]].key
+  val key = owner.key
   val family = key.family
-
   val keyspace = key.keyspace
 
-	// columnParent
-	lazy val columnParent = if(owner.isInstanceOf[SuperColumn])
-      new ColumnParent(family.value).setSuper_column(owner.asInstanceOf[SuperColumn].value)
-    else
-      new ColumnParent(family.value)
 
-	// thrift.Column
-	lazy val cassandraColumn = new CassColumn(name, value, time)
-	
-  lazy val columnPath = {
-    val out = new ColumnPath(family.value)
-    owner match {
-      case owner:SuperColumn => out.setColumn(name).setSuper_column(owner.value)
-      case key:StandardKey   => out.setColumn(name)
-    }    
+  // columnParent
+  lazy val columnParent = owner match {
+    case sup: SuperSubKey => new ColumnParent(family.value).setSuper_column(sup.value)
+    case std: StandardKey => new ColumnParent(family.value)
   }
 
-  lazy val columnOrSuperColumn = {
-    val cosc = new ColumnOrSuperColumn
-    owner match {
-      case key:StandardKey => cosc.setColumn(new CassColumn(name, value, time))
-      case sup:SuperColumn =>
-        val list = Conversions.toJavaList(new CassColumn(name, value, time) :: Nil)
-        cosc.setSuper_column(new CassSuperColumn(sup.value, list))  
-    }
+  // thrift.Column
+  lazy val cassandraColumn = new CassColumn(name, value, time)
+
+  lazy val columnPath = owner match {
+    case sup: SuperSubKey => new ColumnPath(family.value).setColumn(name).setSuper_column(sup.value)
+    case std: StandardKey => new ColumnPath(family.value).setColumn(name)
   }
+
+
+  lazy val columnOrSuperColumn = owner match {
+    case std: StandardKey =>
+      new ColumnOrSuperColumn().setColumn(new CassColumn(name, value, time))
+    case sup: SuperSubKey =>
+      val list = Conversions.toJavaList(new CassColumn(name, value, time) :: Nil)
+      new ColumnOrSuperColumn().setSuper_column(new CassSuperColumn(sup.value, list))
+  }
+
 
 
   /**
    * copy method to create a new instance of this column with a new value and
    * the same other values.
    */
-  def \(newValue:ByteBuffer) = new Column[Owner](name, newValue, time, owner)
+  def \(newValue: ByteBuffer) = new Column(name, newValue, time, owner)
 
 
   /**
    * appends a column onto this one forming a list
    */
-  def ::(other:Column[Owner]):List[Column[Owner]] = other :: this :: Nil
+  def ::(other: Column): List[Column] = other :: this :: Nil
 
   /**
    * given the cassandra object returned from retrieving this object,
    * returns an instance of our return type.
    */
-  def convertGetResult(colOrSuperCol:ColumnOrSuperColumn):Column[Owner] = {
+  def convertGetResult(colOrSuperCol: ColumnOrSuperColumn): Column = {
     val col = colOrSuperCol.getColumn
     Column(ByteBuffer.wrap(col.getName), ByteBuffer.wrap(col.getValue), col.getTimestamp, owner)
   }
 
-  private def stringIfPossible(a:ByteBuffer):String = {
+  private def stringIfPossible(a: ByteBuffer): String = {
     if (a.array.length <= 4) return "Array (" + a.array.mkString(", ") + ")"
     if (a.array.length > 1000) return a.toString
-    try { Conversions.string(a) } catch { case _ => a.toString }
+    try {Conversions.string(a)} catch {case _ => a.toString}
   }
 
   override def toString = "%s \\ Column(name = '%s', value = '%s', time = '%s')".

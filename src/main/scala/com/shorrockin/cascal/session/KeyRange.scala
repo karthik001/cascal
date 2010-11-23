@@ -2,6 +2,7 @@ package com.shorrockin.cascal.session
 
 import org.apache.cassandra.thrift.{KeyRange => CassKeyRange}
 import com.shorrockin.cascal.serialization.StringSerializer
+import java.nio.ByteBuffer
 
 /**
  * a key range is used when you list by keys to specified the start and end
@@ -11,11 +12,11 @@ import com.shorrockin.cascal.serialization.StringSerializer
  *
  * @author Chris Shorrock
  */
-case class KeyRange(start:String, end:String, limit:Int) {
+case class KeyRange(start:ByteBuffer, end:ByteBuffer, limit:Int) {
   lazy val cassandraRange = {
     val range = new CassKeyRange(limit)
-    range.setStart_key(StringSerializer.toBytes(start))
-    range.setEnd_key(StringSerializer.toBytes(end))
+    range.setStart_key(start)
+    range.setEnd_key(end)
     range
   }
 }
@@ -29,8 +30,8 @@ case class KeyRange(start:String, end:String, limit:Int) {
  *
  * @author Chris Shorrock
  */
-case class TokenRange(tokenStart:String, tokenEnd:String, tokenLimit:Int) extends KeyRange(tokenStart, tokenEnd, tokenLimit) {
-  override lazy val cassandraRange = {
+case class TokenRange(start:String, end:String, limit:Int) {
+  lazy val cassandraRange = {
     val range = new CassKeyRange(limit)
     range.setStart_token(start)
     range.setEnd_token(end)

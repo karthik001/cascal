@@ -14,7 +14,7 @@ class TestMultiKeyList extends CassandraTestPool {
   import Assert._
   import Conversions._
 
-  def locate(results:Seq[(ColumnContainer[_, _], Seq[Column[_]])], key:ColumnContainer[_, _]):Seq[Column[_]] = {
+  def locate(results:Seq[(ColumnContainer[_, _], Seq[Column])], key:ColumnContainer[_, _]):Seq[Column] = {
     results.find { _._1 == key }.get._2
   }
 

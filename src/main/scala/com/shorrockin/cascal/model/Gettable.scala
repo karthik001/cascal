@@ -17,6 +17,4 @@ trait Gettable[Result] extends ByteValue {
   val columnPath:ColumnPath
 
   def convertGetResult(colOrSuperCol:ColumnOrSuperColumn):Result
-
-
 }

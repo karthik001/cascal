@@ -11,14 +11,14 @@ import org.apache.cassandra.thrift.{ColumnOrSuperColumn}
  * @author Chris Shorrock
  */
 case class StandardKey(value:ByteBuffer, family:StandardColumnFamily) 
-		extends Key[Column[StandardKey], Seq[Column[StandardKey]]]
-    with StandardColumnContainer[Column[StandardKey], Seq[Column[StandardKey]]] {
+		extends Key[Column, Seq[Column]]
+    with StandardColumnContainer[Column, Seq[Column]] {
 
   def \(name:ByteBuffer) = new Column(name=name, value=null,owner=this)
   def \(name:ByteBuffer, value:ByteBuffer) = new Column(name=name, value=value, owner=this)
   def \(name:ByteBuffer, value:ByteBuffer, time:Long) = new Column(name=name, value=value, time=time, owner=this)
 
-  def convertListResult(results:Seq[ColumnOrSuperColumn]):Seq[Column[StandardKey]] = {
+  def convertListResult(results:Seq[ColumnOrSuperColumn]):Seq[Column] = {
     results.map { (result) =>
       val column = result.getColumn
       \(ByteBuffer.wrap(column.getName), ByteBuffer.wrap(column.getValue), column.getTimestamp)

@@ -26,16 +26,18 @@ class TestUUIDByteConversion extends CassandraTestPool {
     assertEquals(original, Conversions.uuid(string))
   }
 
-  @Test def testUUIDColumnMapping {
-    val uuid     = UUID()
-    val toInsert = "Test" \\ "Super" \ "testUUIDColumnMapping" \ uuid \ "Column" \ "Value"
-    borrow { session =>
-      session.insert(toInsert)
-      val result = Converter[MappedUUID](session.list("Test" \\ "Super" \ "testUUIDColumnMapping"))
+  @Test def testUUIDColumnMapping = borrow { session =>
+    val uuid = UUID()
+    val toInsert = "Test" \\ "Super" \ "UUIDColumnMapping-test" \ uuid \ "Column" \ "Value"
+    
+    session.insert(toInsert)
+    val results = session.list("Test" \\ "Super" \ "UUIDColumnMapping-test" )
+    println("### results: %s".format(results))
+    
+    val result = results.map(c=>Converter[MappedUUID](c._2))
 
-      assertEquals(uuid, result(0).s)
-      assertEquals("Value", result(0).b)
-    }
+    assertEquals(uuid, result(0).s)
+    assertEquals("Value", result(0).b)
   }
 }
 

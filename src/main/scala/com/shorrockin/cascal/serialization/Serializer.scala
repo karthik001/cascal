@@ -72,7 +72,7 @@ object UUIDSerializer extends Serializer[UUID] {
 object IntSerializer extends Serializer[Int] {
   val bytesPerInt = java.lang.Integer.SIZE / java.lang.Byte.SIZE
 
-  def toBytes(i:Int) = ByteBuffer.wrap(new Array[Byte](bytesPerInt)).putInt(i)
+  def toBytes(i:Int) = ByteBuffer.allocate(bytesPerInt).putInt(i)
   def fromBytes(bytes:ByteBuffer) = bytes.getInt(0)
   def toString(obj:Int) = obj.toString
   def fromString(str:String) = str.toInt
@@ -81,7 +81,7 @@ object IntSerializer extends Serializer[Int] {
 object LongSerializer extends Serializer[Long] {
   val bytesPerLong = java.lang.Long.SIZE / java.lang.Byte.SIZE
 
-  def toBytes(l:Long) = ByteBuffer.wrap(new Array[Byte](bytesPerLong)).putLong(l)
+  def toBytes(l:Long) = ByteBuffer.allocate(bytesPerLong).putLong(l)
   def fromBytes(bytes:ByteBuffer) = bytes.getLong(0)
   def toString(obj:Long) = obj.toString
   def fromString(str:String) = str.toLong
@@ -97,7 +97,7 @@ object BooleanSerializer extends Serializer[Boolean] {
 object FloatSerializer extends Serializer[Float] {
   val bytesPerFloat = java.lang.Float.SIZE / java.lang.Byte.SIZE
 
-  def toBytes(f:Float) = ByteBuffer.wrap(new Array[Byte](bytesPerFloat)).putFloat(f)
+  def toBytes(f:Float) = ByteBuffer.allocate(bytesPerFloat).putFloat(f)
   def fromBytes(bytes:ByteBuffer) = bytes.getFloat(0)
   def toString(obj:Float) = obj.toString
   def fromString(str:String) = str.toFloat
@@ -106,7 +106,7 @@ object FloatSerializer extends Serializer[Float] {
 object DoubleSerializer extends Serializer[Double] {
   val bytesPerDouble = java.lang.Double.SIZE / java.lang.Byte.SIZE
 
-  def toBytes(d:Double) = ByteBuffer.wrap(new Array[Byte](bytesPerDouble)).putDouble(d)
+  def toBytes(d:Double) = ByteBuffer.allocate(bytesPerDouble).putDouble(d)
   def fromBytes(bytes:ByteBuffer) = bytes.getDouble(0)
   def toString(obj:Double) = obj.toString
   def fromString(str:String) = str.toDouble

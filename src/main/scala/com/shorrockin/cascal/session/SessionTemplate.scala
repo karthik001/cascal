@@ -50,13 +50,13 @@ trait SessionTemplate {
   /**
    * inserts the specified column value
    */
-  def insert[E](col:Column[E], consistency:Consistency):Column[E]
+  def insert[E](col:Column, consistency:Consistency):Column
 
 
   /**
    * inserts the specified column value using the default consistency
    */
-  def insert[E](col:Column[E]):Column[E]
+  def insert[E](col:Column):Column
 
 
   /**
@@ -88,13 +88,13 @@ trait SessionTemplate {
   /**
    * removes the specified column container
    */
-  def remove(column:Column[_], consistency:Consistency):Unit
+  def remove(column:Column, consistency:Consistency):Unit
 
 
   /**
    * removes the specified column container using the default consistency
    */
-  def remove(column:Column[_]):Unit
+  def remove(column:Column):Unit
 
 
   /**

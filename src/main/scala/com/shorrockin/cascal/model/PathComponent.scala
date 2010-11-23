@@ -9,7 +9,9 @@ import java.nio.ByteBuffer
  * @param ValueType all path components contain a value, this
  * defines the type of value.
  */
-trait PathComponent[ValueType] { val value:ValueType }
+trait PathComponent[V] {
+  val value:V
+}
 
 /**
  * categorization of a path component who's value is a byte

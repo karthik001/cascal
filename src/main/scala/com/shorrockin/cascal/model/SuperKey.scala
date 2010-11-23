@@ -6,20 +6,15 @@ import org.apache.cassandra.thrift.{ColumnParent, ColumnPath, ColumnOrSuperColum
 /**
  *@author Chris Shorrock, Michael Fortin
  */
-case class SuperKey(valueIn:ByteBuffer, family:SuperColumnFamily)
-		extends Key[SuperColumn, Seq[(SuperColumn, Seq[Column[SuperColumn]])]] {
+case class SuperKey(value:ByteBuffer, family:SuperColumnFamily)
+		extends Key[SuperSubKey, Seq[(SuperSubKey, Seq[Column])]] {
 
-  def \(v:ByteBuffer) = new SuperColumn(v, this)
-
-  val value = {
-    valueIn.rewind
-    valueIn
-  }
+  def \(v:ByteBuffer) = new SuperSubKey(v, this)
   
   /**
    *  converts a list of super columns to the specified return type
    */
-  def convertListResult(results:Seq[ColumnOrSuperColumn]):Seq[(SuperColumn, Seq[Column[SuperColumn]])] = {
+  def convertListResult(results:Seq[ColumnOrSuperColumn]):Seq[(SuperSubKey, Seq[Column])] = {
     results.map { (result) =>
       val nativeSuperCol = result.getSuper_column
       val superColumn    = this \ ByteBuffer.wrap(nativeSuperCol.getName)

@@ -11,8 +11,7 @@ class TestStandardInesrtAndList extends CassandraTestPool with Logging {
   import Assert._
   import Conversions._
 
-  @Test def testStandardFunctions = borrow {
-    (session) =>
+  @Test def testStandardFunctions = borrow {session =>
       import session._
 
       log.debug("Cluster Name: " + clusterName)
@@ -54,6 +53,7 @@ class TestStandardInesrtAndList extends CassandraTestPool with Logging {
       var fail1 = failFamily \ "fail1" \ "col1" \ "val1"
       var fail2 = failFamily2 \ "fail1" \ "super1" \ "col1" \ "val1"
       var fail3 = failFamily3 \ "fail1" \ "col1" \ "val1"
+
       try {
         insert(fail1)
         fail("Inserted into a non-existent columnfamily")

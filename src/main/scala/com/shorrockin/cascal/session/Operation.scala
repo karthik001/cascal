@@ -24,7 +24,7 @@ trait Operation {
  *
  * @author Chris Shorrock
  */
-case class Insert(column:Column[_]) extends Operation {
+case class Insert(column:Column) extends Operation {
   lazy val mutation = new Mutation().setColumn_or_supercolumn(column.columnOrSuperColumn)
   val family = column.family
   val key = column.key
@@ -59,7 +59,7 @@ class Delete(val container:ColumnContainer[_, _], val predicate:Predicate) exten
     }
 
     container match {
-      case sc:SuperColumn => del.setSuper_column(sc.value)
+      case sc:SuperSubKey => del.setSuper_column(sc.value)
       case _ => /* ignore */
     }
 

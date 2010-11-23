@@ -1,7 +1,7 @@
 package com.shorrockin.cascal
 
 import testing._
-import model.{Column, SuperColumn}
+import model.{Column, SuperSubKey}
 import org.junit.{Test, Assert}
 import utils.{UUID, Conversions, Logging}
 
@@ -15,12 +15,12 @@ class TestSuperInsertAndList extends CassandraTestPool with Logging {
 
       val key = "Test" \\ "Super" \ "1"
       val superColumn1 = key \ UUID()
-      val column1 = superColumn1 \ "Column-1" \ "Value-1"
-      val column2 = superColumn1 \ "Column-2" \ "Value-2"
-      val column3 = superColumn1 \ "Column-3" \ "Value-3"
+      val column1 = superColumn1 \ "SuperColumn-1" \ "Value-1"
+      val column2 = superColumn1 \ "SuperColumn-2" \ "Value-2"
+      val column3 = superColumn1 \ "SuperColumn-3" \ "Value-3"
       val superColumn2 = key \ UUID()
-      val column4 = superColumn2 \ "Column-4" \ "Value-4"
-      val column5 = superColumn2 \ "Column-5" \ "Value-5"
+      val column4 = superColumn2 \ "SuperColumn-4" \ "Value-4"
+      val column5 = superColumn2 \ "SuperColumn-5" \ "Value-5"
 
       insert(column1)
       insert(column2)
@@ -31,8 +31,8 @@ class TestSuperInsertAndList extends CassandraTestPool with Logging {
       var column = get(column1)
       assertNotNull(column)
       assertEquals("Value-1", string(column.get.value))
-      assertEquals("Column-1", string(column.get.name))
-      log.debug("get 'Column-1' returned: " + string(column.get))
+      assertEquals("SuperColumn-1", string(column.get.name))
+      log.debug("get 'SuperColumn-1' returned: " + string(column.get))
 
       var columns = get(superColumn1).get
       var values = columns.map {(c) => string(c.value)}
@@ -101,7 +101,7 @@ class TestSuperInsertAndList extends CassandraTestPool with Logging {
   }
 
 
-  def locate(l: Seq[(SuperColumn, Seq[Column[_]])], value: Array[Byte]): Seq[Column[_]] = {
+  def locate(l: Seq[(SuperSubKey, Seq[Column])], value: Array[Byte]): Seq[Column] = {
     l.foreach {
       (tuple) =>
         if (java.util.Arrays.equals(tuple._1.value.array, value)) {

@@ -12,21 +12,21 @@ import com.shorrockin.cascal.utils.Conversions
  *
  * @author Chris Shorrock
  */
-case class SuperColumn(value:ByteBuffer, key:SuperKey) 
-		extends Gettable[Seq[Column[SuperColumn]]]()
-    with StandardColumnContainer[Column[SuperColumn], Seq[Column[SuperColumn]]] {
+case class SuperSubKey(value:ByteBuffer, key:SuperKey) // extends Key[Column, Seq[Column]]
+    extends Gettable[Seq[Column]]
+    with StandardColumnContainer[Column, Seq[Column]] {
 	
   def \(name:ByteBuffer) = new Column(name=name, value=null, owner=this)
   def \(name:ByteBuffer, value:ByteBuffer) = new Column(name=name, value=value, owner=this)
   def \(name:ByteBuffer, value:ByteBuffer, time:Long) = new Column(name=name, value=value, time=time, owner=this)
 
-  val family = key.family
-  val keyspace = family.keyspace
+  override val family = key.family
+  override val keyspace = family.keyspace
 
-  lazy val columnParent = new ColumnParent(family.value).setSuper_column(value)
-  lazy val columnPath = new ColumnPath(family.value).setSuper_column(value)
+  override lazy val columnParent = new ColumnParent(family.value).setSuper_column(value)
+  override lazy val columnPath = new ColumnPath(family.value).setSuper_column(value)
 
-  def ::(other:SuperColumn):List[SuperColumn] = other :: this :: Nil  
+  def ::(other:SuperSubKey):List[SuperSubKey] = other :: this :: Nil
 
   private def convertList[T](v:java.util.List[T]):List[T] = {
 	 scala.collection.JavaConversions.asBuffer(v).toList
@@ -36,7 +36,7 @@ case class SuperColumn(value:ByteBuffer, key:SuperKey)
    * given the returned object from the get request, convert
    * to our return type.
    */
-  def convertGetResult(colOrSuperCol:ColumnOrSuperColumn):Seq[Column[SuperColumn]] = {
+  def convertGetResult(colOrSuperCol:ColumnOrSuperColumn):Seq[Column] = {
     val superCol = colOrSuperCol.getSuper_column
     convertList(superCol.getColumns).map { (column) => \(ByteBuffer.wrap(column.getName), ByteBuffer.wrap(column.getValue), column.getTimestamp) }
   }
@@ -46,7 +46,7 @@ case class SuperColumn(value:ByteBuffer, key:SuperKey)
    * given the return object from the list request, convert it to
    * our return type
    */
-  def convertListResult(results:Seq[ColumnOrSuperColumn]):Seq[Column[SuperColumn]] = {
+  def convertListResult(results:Seq[ColumnOrSuperColumn]):Seq[Column] = {
     results.map { (result) =>
       val column = result.getColumn
       \(ByteBuffer.wrap(column.getName), ByteBuffer.wrap(column.getValue), column.getTimestamp)

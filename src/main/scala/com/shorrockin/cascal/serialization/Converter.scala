@@ -30,22 +30,22 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
 
   private var reflectionCache = Map[Class[_], ReflectionInformation]()
   
-
-  /**
-   * converts all the column sequences in the provided map (which is returned from a list
-   * call). and returns a sequence of the specified type.
-   */
-  def apply[T](seq:Seq[(SuperColumn, Seq[Column[SuperColumn]])])(implicit manifest:Manifest[T]):Seq[T] = {
-    seq.map { (tup) => apply[T](tup._2) }
-  }
-
+//
+//  /**
+//   * converts all the column sequences in the provided map (which is returned from a list
+//   * call). and returns a sequence of the specified type.
+//   */
+//  def apply[T](seq:Seq[(SuperSubKey, Seq[Column])])(implicit manifest:Manifest[T]):Seq[T] = {
+//    seq.map { (tup) => apply[T](tup._2) }
+//  }
+//
 
   /**
    * given a list of columns, assumed to all belong to the same columns, creates
    * the object of type T using the annotations present an that class. Uses
    * the serializers to convert values in columns to their appropriate.
    */
-  def apply[T](columns:Seq[Column[_]])(implicit manifest:Manifest[T]):T = {
+  def apply[T](columns:Seq[Column])(implicit manifest:Manifest[T]):T = {
     val info = Converter.this.info(manifest.erasure)
 
     // iterate over all the types and map them into the values needed to call the
@@ -144,7 +144,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
    * complete with name/value. Uses the serializers to convert values in columns to their
    * appropriate byte array.
    */ 
-  def unapply[T](obj:T)(implicit manifest:Manifest[T]):Seq[Column[_]] = {
+  def unapply[T](obj:T)(implicit manifest:Manifest[T]):Seq[Column] = {
     val info = Converter.this.info(manifest.erasure)
 
     val key:ByteBuffer = info.fieldGettersAndColumnNames.filter(tup => tup._2._2 match {
@@ -211,7 +211,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
   /**
    * returns the column with the specified name, or 
    */
-  private def find(name:String, columns:Seq[Column[_]]):Option[Column[_]] = {
+  private def find(name:String, columns:Seq[Column]):Option[Column] = {
     val nameBytes = Conversions.bytes(name)
     columns.find { (c) => Arrays.equals(nameBytes.array, c.name.array) }
   }
@@ -251,10 +251,10 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
   /**
    * returns the common super column that is shared amonst all the columns
    */
-  private def columnsToSuperColumn(columns:Seq[Column[_]]):SuperColumn = {
+  private def columnsToSuperColumn(columns:Seq[Column]):SuperSubKey = {
     if (columns.length == 0) throw new IllegalArgumentException("unable to retrieve super column when Seq[Column] is empty")
     columns(0).owner match {
-      case sc:SuperColumn => sc
+      case sc:SuperSubKey => sc
       case _ => throw new IllegalArgumentException("unable to retrieve super column for a standard column")
     }
   }
@@ -264,16 +264,16 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
    * returns the columnsToKey value for the specified sequence of columns, assumes all columns
    * contain the same columnsToKey.
    */
-  private def columnsToKey(columns:Seq[Column[_]]):Key[_, _] = {
+  private def columnsToKey(columns:Seq[Column]):Key[_, _] = {
     if (columns.length == 0) throw new IllegalArgumentException("unable to retrieve key value when empty list of columns are provided")
-    columns(0).key
+    columns(0).key.asInstanceOf[Key[_,_]]
   }
 
 
   /**
    * holds reflection information about a given class
    */
-  case class ReflectionInformation(val cls:Class[_]) {
+  case class ReflectionInformation( cls:Class[_]) {
     val keyspace = {
       extract(cls, classOf[AKeySpace]) match {
         case None    => throw new IllegalArgumentException("all mapped classes must contain @Keyspace annotation")

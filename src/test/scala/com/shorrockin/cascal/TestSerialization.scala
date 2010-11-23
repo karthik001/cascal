@@ -61,7 +61,7 @@ class TestSerialization {
     val col2 = (key \ "SC2" \ "C" \ "Bar") :: Nil
     val seq  = List((col1(0).owner -> col1), (col2(0).owner -> col2))
 
-    val objects = Converter[MappedOptionSuper](seq)
+    val objects = seq.map(tup=>Converter[MappedOptionSuper](tup._2))
 
     assertEquals(2, objects.length)
     assertEquals("Foo", objects(0).value.get)
@@ -90,14 +90,9 @@ class TestSerialization {
 
   }
 
+  @Test def testCanConvertObjectToStandardColumnList = {}
 
-  @Test def testCanConvertObjectToStandardColumnList() {
-  }
-
-
-  @Test def testCanConvertObjectToSuperColumnList() {
-
-  }
+  @Test def testCanConvertObjectToSuperColumnList() = {}
 }
 
 

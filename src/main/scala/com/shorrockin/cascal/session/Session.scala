@@ -100,8 +100,8 @@ class Session(val keySpace: String,
     keyspaceDesc.toList
   }
 
-  def verifyInsert[E](col: Column[E]) {
-    var famType = if (col.owner.isInstanceOf[SuperColumn]) "Super" else "Standard"
+  def verifyInsert[E](col: Column) {
+    var famType = if (col.owner.isInstanceOf[SuperSubKey]) "Super" else "Standard"
     if (!keyspaceDescriptors.contains(col.keyspace.value, col.family.value, famType)) {
       throw new IllegalArgumentException("Keyspace %s or ColumnFamily %s of type %s does not exist in this cassandra instance".format(col.keyspace.value, col.family.value, famType))
     }
@@ -145,7 +145,7 @@ class Session(val keySpace: String,
   /**
    * inserts the specified column value
    */
-  def insert[E](col: Column[E], consistency: Consistency) = detect {
+  def insert[E](col: Column, consistency: Consistency) = detect {
     verifyInsert(col)
     // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.Column,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
     println(col)
@@ -161,7 +161,7 @@ class Session(val keySpace: String,
   /**
    * inserts the specified column value using the default consistency
    */
-  def insert[E](col: Column[E]): Column[E] = insert(col, defaultConsistency)
+  def insert[E](col: Column): Column = insert(col, defaultConsistency)
 
 
   /**
@@ -180,7 +180,7 @@ class Session(val keySpace: String,
     count(container, predicate, defaultConsistency)
 
   def count(container: ColumnContainer[_, _]): Int =
-    count(container, RangePredicate("", ""), defaultConsistency)
+    count(container, EmptyPredicate, defaultConsistency)
 
 
   /**
@@ -202,7 +202,7 @@ class Session(val keySpace: String,
   /**
    * removes the specified column container
    */
-  def remove(column: Column[_], consistency: Consistency): Unit = detect {
+  def remove(column: Column, consistency: Consistency): Unit = detect {
     // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnPath,x$3: Long,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
     client.remove(column.family.value, column.columnPath, now, consistency)
   }
@@ -211,7 +211,7 @@ class Session(val keySpace: String,
   /**
    * removes the specified column container using the default consistency
    */
-  def remove(column: Column[_]): Unit = remove(column, defaultConsistency)
+  def remove(column: Column): Unit = remove(column, defaultConsistency)
 
 
   /**
@@ -229,7 +229,8 @@ class Session(val keySpace: String,
   /**
    * performs a list of the specified container using no predicate and the default consistency.
    */
-  def list[ResultType](container: ColumnContainer[_, ResultType]): ResultType = list(container, EmptyPredicate, defaultConsistency)
+  def list[ResultType](container: ColumnContainer[_, ResultType]): ResultType =
+      list(container, EmptyPredicate, defaultConsistency)
 
 
   /**
@@ -252,22 +253,22 @@ class Session(val keySpace: String,
     if (containers.size > 0) detect {
       val firstContainer = containers(0)
       val keyspace = firstContainer.keyspace
-      val keyStrings = containers.map {k => ByteBuffer.wrap(k.key.value.getBytes)}.asInstanceOf[Seq[ByteBuffer]]
-
+      val keyStrings = containers.map(_.key.value)
 
       // (x$1: java.util.List[java.nio.ByteBuffer],x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.SlicePredicate,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
       val results = client.multiget_slice(toJavaList(keyStrings), firstContainer.columnParent, predicate.slicePredicate, consistency)
 
-      def locate(key: String) = (containers.find {_.key.value.equals(key)}).get
+      def locate(key: ByteBuffer) = containers.find(_.key.value.equals(key)).get
 
-      results.map {
-        (tuple) =>
-          val key = locate(tuple._1)
-          val value = key.convertListResult(tuple._2)
-          (key -> value)
+      results.map {tuple =>
+        val key = locate(tuple._1)
+        val value = key.convertListResult(tuple._2)
+        (key -> value)
       }.toSeq
-    } else {
-      throw new IllegalArgumentException("must provide at least 1 container for a list(keys, predicate, consistency) call")
+    }
+    else {
+      throw new IllegalArgumentException(
+        "must provide at least 1 container for a list(keys, predicate, consistency) call")
     }
   }
 

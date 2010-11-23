@@ -13,8 +13,9 @@ import java.nio.ByteBuffer
  * @param ColumnType the type of columns that this container houses.
  * @param ListType when listed, what type of object does it return.
  */
-trait ColumnContainer[ColumnType, ListType] {
-  def \(value:ByteBuffer):ColumnType
+trait ColumnContainer[C, L] extends ByteValue {
+  
+  def \(value:ByteBuffer):C
 
   val family:ColumnFamily[_]
   val key:Key[_, _]
@@ -22,6 +23,6 @@ trait ColumnContainer[ColumnType, ListType] {
   val columnPath:ColumnPath
   val columnParent:ColumnParent
 
-  def convertListResult(results:Seq[ColumnOrSuperColumn]):ListType
+  def convertListResult(results:Seq[ColumnOrSuperColumn]):L
 
 }

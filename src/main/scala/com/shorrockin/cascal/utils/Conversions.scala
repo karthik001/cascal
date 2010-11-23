@@ -46,7 +46,7 @@ object Conversions {
   implicit def uuid(source:String) = UUIDSerializer.fromString(source)
   implicit def bytes(source:JavaUUID):ByteBuffer = UUIDSerializer.toBytes(source)
 
-  implicit def string(col:Column[_]):String = {
+  implicit def string(col:Column):String = {
     "%s -> %s (time: %s)".format(Conversions.string(col.name),
                                  Conversions.string(col.value),
                                  col.time)

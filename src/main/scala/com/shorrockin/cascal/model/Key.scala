@@ -12,14 +12,13 @@ import java.nio.ByteBuffer
  * @param ColumnType the type of column that this key holds
  * @param ListType when this key is used in a list the type of object that is returned
  */
-trait Key[ColumnType, ListType] extends ByteValue with ColumnContainer[ColumnType, ListType] {
+trait Key[C, T] extends ByteValue with ColumnContainer[C, T] {
   val value:ByteBuffer
 
   val keyspace = family.keyspace
   val key = this
-
   lazy val columnPath = new ColumnPath(family.value)
   lazy val columnParent = new ColumnParent(family.value)
 
-  def ::(other:Key[ColumnType, ListType]):List[Key[ColumnType, ListType]] = other :: this :: Nil
+  def ::(other:Key[C, T]):List[Key[C, T]] = other :: this :: Nil
 }
