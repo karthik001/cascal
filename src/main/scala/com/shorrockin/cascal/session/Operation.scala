@@ -59,7 +59,7 @@ class Delete(val container:ColumnContainer[_, _], val predicate:Predicate) exten
     }
 
     container match {
-      case sc:SuperSubKey => del.setSuper_column(sc.value)
+      case sc:SuperColumn => del.setSuper_column(sc.value)
       case _ => /* ignore */
     }
 

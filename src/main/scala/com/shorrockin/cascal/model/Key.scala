@@ -17,8 +17,8 @@ trait Key[C, T] extends ByteValue with ColumnContainer[C, T] {
 
   val keyspace = family.keyspace
   val key = this
-  lazy val columnPath = new ColumnPath(family.value)
-  lazy val columnParent = new ColumnParent(family.value)
+  lazy val columnPath = new ColumnPath().setColumn_family(family.value)
+  lazy val columnParent = new ColumnParent().setColumn_family(family.value)
 
   def ::(other:Key[C, T]):List[Key[C, T]] = other :: this :: Nil
 }

@@ -27,7 +27,7 @@ case class Column(name: ByteBuffer, value: ByteBuffer, time: Long = now, owner: 
 
   // columnParent
   lazy val columnParent = owner match {
-    case sup: SuperSubKey => new ColumnParent(family.value).setSuper_column(sup.value)
+    case sup: SuperColumn => new ColumnParent(family.value).setSuper_column(sup.value)
     case std: StandardKey => new ColumnParent(family.value)
   }
 
@@ -35,7 +35,7 @@ case class Column(name: ByteBuffer, value: ByteBuffer, time: Long = now, owner: 
   lazy val cassandraColumn = new CassColumn(name, value, time)
 
   lazy val columnPath = owner match {
-    case sup: SuperSubKey => new ColumnPath(family.value).setColumn(name).setSuper_column(sup.value)
+    case sup: SuperColumn => new ColumnPath(family.value).setColumn(name).setSuper_column(sup.value)
     case std: StandardKey => new ColumnPath(family.value).setColumn(name)
   }
 
@@ -43,7 +43,7 @@ case class Column(name: ByteBuffer, value: ByteBuffer, time: Long = now, owner: 
   lazy val columnOrSuperColumn = owner match {
     case std: StandardKey =>
       new ColumnOrSuperColumn().setColumn(new CassColumn(name, value, time))
-    case sup: SuperSubKey =>
+    case sup: SuperColumn =>
       val list = Conversions.toJavaList(new CassColumn(name, value, time) :: Nil)
       new ColumnOrSuperColumn().setSuper_column(new CassSuperColumn(sup.value, list))
   }

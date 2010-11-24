@@ -251,10 +251,10 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
   /**
    * returns the common super column that is shared amonst all the columns
    */
-  private def columnsToSuperColumn(columns:Seq[Column]):SuperSubKey = {
+  private def columnsToSuperColumn(columns:Seq[Column]):SuperColumn = {
     if (columns.length == 0) throw new IllegalArgumentException("unable to retrieve super column when Seq[Column] is empty")
     columns(0).owner match {
-      case sc:SuperSubKey => sc
+      case sc:SuperColumn => sc
       case _ => throw new IllegalArgumentException("unable to retrieve super column for a standard column")
     }
   }

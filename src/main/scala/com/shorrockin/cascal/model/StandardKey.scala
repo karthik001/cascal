@@ -1,7 +1,7 @@
 package com.shorrockin.cascal.model
 
 import java.nio.ByteBuffer
-import org.apache.cassandra.thrift.{ColumnOrSuperColumn}
+import org.apache.cassandra.thrift.{ColumnParent, ColumnPath, ColumnOrSuperColumn}
 
 /**
  * implementation of a standard key, which is an object which can be thought
@@ -17,6 +17,9 @@ case class StandardKey(value:ByteBuffer, family:StandardColumnFamily)
   def \(name:ByteBuffer) = new Column(name=name, value=null,owner=this)
   def \(name:ByteBuffer, value:ByteBuffer) = new Column(name=name, value=value, owner=this)
   def \(name:ByteBuffer, value:ByteBuffer, time:Long) = new Column(name=name, value=value, time=time, owner=this)
+
+  override lazy val columnPath = new ColumnPath(family.value)
+  override lazy val columnParent = new ColumnParent(family.value)
 
   def convertListResult(results:Seq[ColumnOrSuperColumn]):Seq[Column] = {
     results.map { (result) =>

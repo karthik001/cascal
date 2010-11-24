@@ -13,6 +13,7 @@ class TestEmbeddedCassandra extends CassandraTestPool {
     val key = "Test" \ "Standard" \ "testCanUseSessions"
     val column = key \ "Hello" \ "World"
     insert(column)
-    assertEquals(1, list(key).size)
+    val returnsList = list(key)
+    assertEquals(1, returnsList.size)
   }
 }

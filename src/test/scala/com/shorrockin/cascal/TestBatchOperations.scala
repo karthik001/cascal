@@ -17,7 +17,10 @@ class TestBatchOperations extends CassandraTestPool {
     val col3 = key \ ("Column-a-3", "Value-3")
 
     s.batch(Insert(col1) :: Insert(col2) :: Insert(col3))
-
+//    s.insert(col1)
+//    s.insert(col2)
+//    s.insert(col3)
+//
     println("owner: %s".format(col1.owner))
     val list = s.list(key)
     assertEquals(3, list.size)

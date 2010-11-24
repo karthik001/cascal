@@ -12,7 +12,7 @@ import com.shorrockin.cascal.utils.Conversions
  *
  * @author Chris Shorrock
  */
-case class SuperSubKey(value:ByteBuffer, key:SuperKey) // extends Key[Column, Seq[Column]]
+case class SuperColumn(value:ByteBuffer, key:SuperKey) // extends Key[Column, Seq[Column]]
     extends Gettable[Seq[Column]]
     with StandardColumnContainer[Column, Seq[Column]] {
 	
@@ -23,10 +23,10 @@ case class SuperSubKey(value:ByteBuffer, key:SuperKey) // extends Key[Column, Se
   override val family = key.family
   override val keyspace = family.keyspace
 
-  override lazy val columnParent = new ColumnParent(family.value).setSuper_column(value)
-  override lazy val columnPath = new ColumnPath(family.value).setSuper_column(value)
+  override lazy val columnPath = new ColumnPath(family.value).setSuper_column(key.value)
+  override lazy val columnParent = new ColumnParent(family.value).setSuper_column(key.value)
 
-  def ::(other:SuperSubKey):List[SuperSubKey] = other :: this :: Nil
+  def ::(other:SuperColumn):List[SuperColumn] = other :: this :: Nil
 
   private def convertList[T](v:java.util.List[T]):List[T] = {
 	 scala.collection.JavaConversions.asBuffer(v).toList

@@ -101,7 +101,7 @@ class Session(val keySpace: String,
   }
 
   def verifyInsert[E](col: Column) {
-    var famType = if (col.owner.isInstanceOf[SuperSubKey]) "Super" else "Standard"
+    var famType = if (col.owner.isInstanceOf[SuperColumn]) "Super" else "Standard"
     if (!keyspaceDescriptors.contains(col.keyspace.value, col.family.value, famType)) {
       throw new IllegalArgumentException("Keyspace %s or ColumnFamily %s of type %s does not exist in this cassandra instance".format(col.keyspace.value, col.family.value, famType))
     }
@@ -222,6 +222,7 @@ class Session(val keySpace: String,
     // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.SlicePredicate,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
 
     val results = client.get_slice(container.family.value, container.columnParent, predicate.slicePredicate, consistency)
+    println("### get_slice: %s".format(results))
     container.convertListResult(results)
   }
 
@@ -252,16 +253,25 @@ class Session(val keySpace: String,
   def list[ColumnType, ResultType](containers: Seq[ColumnContainer[ColumnType, ResultType]], predicate: Predicate, consistency: Consistency): Seq[(ColumnContainer[ColumnType, ResultType], ResultType)] = {
     if (containers.size > 0) detect {
       val firstContainer = containers(0)
-      val keyspace = firstContainer.keyspace
-      val keyStrings = containers.map(_.key.value)
+      val keyBuffers = containers.map(_.key.value)
 
       // (x$1: java.util.List[java.nio.ByteBuffer],x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.SlicePredicate,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
-      val results = client.multiget_slice(toJavaList(keyStrings), firstContainer.columnParent, predicate.slicePredicate, consistency)
+      //
+      // return map<string,list<ColumnOrSuperColumn>>
+      // multiget_slice(
+      //      list<string> keys,
+      //      ColumnParent column_parent,
+      //      SlicePredicate predicate, ConsistencyLevel consistency_level)
 
-      def locate(key: ByteBuffer) = containers.find(_.key.value.equals(key)).get
+      println("*** keys: %s".format(keyBuffers))
+      println("*** columnParent: %s".format(firstContainer.columnParent))
+      println("*** slicePredicate: %s".format(predicate.slicePredicate))
+      val results = client.multiget_slice(toJavaList(keyBuffers), firstContainer.columnParent, predicate.slicePredicate, consistency)
+      println("### results: %s".format(results))
 
       results.map {tuple =>
-        val key = locate(tuple._1)
+        println("### results tuple: %s".format(tuple))
+        val key = containers.find(_.key.value.equals(tuple._1)).get
         val value = key.convertListResult(tuple._2)
         (key -> value)
       }.toSeq
@@ -348,7 +358,7 @@ class Session(val keySpace: String,
       }
 
       // TODO may need to flatten duplicate super columns?
-
+      println("keyToFamilyMutations: %s".format(keyToFamilyMutations))
       // (x$1: java.util.Map[java.nio.ByteBuffer,java.util.Map[java.lang.String,java.util.List[org.apache.cassandra.thrift.Mutation]]],x$2: org.apache.cassandra.thrift.ConsistencyLevel)
       client.batch_mutate(keyToFamilyMutations, consistency)
     } else {

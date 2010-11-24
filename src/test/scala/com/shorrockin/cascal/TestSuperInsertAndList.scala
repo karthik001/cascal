@@ -1,7 +1,7 @@
 package com.shorrockin.cascal
 
 import testing._
-import model.{Column, SuperSubKey}
+import model.{Column, SuperColumn}
 import org.junit.{Test, Assert}
 import utils.{UUID, Conversions, Logging}
 
@@ -101,7 +101,7 @@ class TestSuperInsertAndList extends CassandraTestPool with Logging {
   }
 
 
-  def locate(l: Seq[(SuperSubKey, Seq[Column])], value: Array[Byte]): Seq[Column] = {
+  def locate(l: Seq[(SuperColumn, Seq[Column])], value: Array[Byte]): Seq[Column] = {
     l.foreach {
       (tuple) =>
         if (java.util.Arrays.equals(tuple._1.value.array, value)) {
