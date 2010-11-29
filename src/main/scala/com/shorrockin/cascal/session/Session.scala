@@ -128,6 +128,8 @@ class Session(val keySpace: String,
   def get[ResultType](col: Gettable[ResultType], consistency: Consistency): Option[ResultType] = detect {
     try {
       // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnPath,x$3: org.apache.cassandra.thrift.ConsistencyLevel)
+      println("col.family.value:%s".format(col.family.value))
+      println("col.columnPath:%s".format(col.columnPath))
       val result = client.get(col.family.value, col.columnPath, consistency)
       Some(col.convertGetResult(result))
     } catch {
@@ -147,12 +149,14 @@ class Session(val keySpace: String,
    */
   def insert[E](col: Column, consistency: Consistency) = detect {
     verifyInsert(col)
-    // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnParent,x$3: org.apache.cassandra.thrift.Column,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
     println(col)
     val family = col.family.value
     val parent = col.columnParent
     val column = col.cassandraColumn
     println("*** insert: %s // %s / %s".format(family,parent,column))
+
+    // (x$1: java.nio.ByteBuffer,x$2: org.apache.cassandra.thrift.ColumnParent,x$3:
+    //  org.apache.cassandra.thrift.Column,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
     client.insert(family, parent, column, consistency)
     col
   }
@@ -261,7 +265,8 @@ class Session(val keySpace: String,
       // multiget_slice(
       //      list<string> keys,
       //      ColumnParent column_parent,
-      //      SlicePredicate predicate, ConsistencyLevel consistency_level)
+      //      SlicePredicate predicate,
+      //      ConsistencyLevel consistency_level)
 
       println("*** keys: %s".format(keyBuffers))
       println("*** columnParent: %s".format(firstContainer.columnParent))
@@ -303,6 +308,7 @@ class Session(val keySpace: String,
   def list[ColumnType, ListType](family: ColumnFamily[Key[ColumnType, ListType]], range: KeyRange, predicate: Predicate, consistency: Consistency): Map[Key[ColumnType, ListType], ListType] = detect {
     // (x$1: org.apache.cassandra.thrift.ColumnParent,x$2: org.apache.cassandra.thrift.SlicePredicate,x$3: org.apache.cassandra.thrift.KeyRange,x$4: org.apache.cassandra.thrift.ConsistencyLevel)
     val results = client.get_range_slices(family.columnParent, predicate.slicePredicate, range.cassandraRange, consistency)
+    println("list %s".format(results))
     var map = Map[Key[ColumnType, ListType], ListType]()
 
     results.foreach {
@@ -361,7 +367,8 @@ class Session(val keySpace: String,
       println("keyToFamilyMutations: %s".format(keyToFamilyMutations))
       // (x$1: java.util.Map[java.nio.ByteBuffer,java.util.Map[java.lang.String,java.util.List[org.apache.cassandra.thrift.Mutation]]],x$2: org.apache.cassandra.thrift.ConsistencyLevel)
       client.batch_mutate(keyToFamilyMutations, consistency)
-    } else {
+    }
+    else {
       throw new IllegalArgumentException("cannot perform batch operation on 0 length operation sequence")
     }
   }

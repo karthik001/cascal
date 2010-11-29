@@ -19,18 +19,18 @@ class TestStandardInesrtAndList extends CassandraTestPool with Logging {
       log.debug("Keyspaces: " + keyspaces.mkString("", ",", ""))
 
       val family = "Test" \ "Standard"
-      val key = family \ "testStandardFunctions"
+      val key = family \ "standardFunctions"
 
-      insert(key \ "Column-1" \ "Value-1")
-      insert(key \ "Column-2" \ "Value-2")
-      insert(key \ "Column-3" \ "Value-3")
-      insert(key \ "Column-4" \ "Value-4")
+      insert(key \ "std-Column-1" \ "Value-1")
+      insert(key \ "std-Column-2" \ "Value-2")
+      insert(key \ "std-Column-3" \ "Value-3")
+      insert(key \ "std-Column-4" \ "Value-4")
 
-      val column = get(key \ "Column-1")
+      val column = get(key \ "std-Column-1")
       assertNotNull(column)
       assertEquals("Value-1", string(column.get.value))
-      assertEquals("Column-1", string(column.get.name))
-      log.debug("get 'Column-1' returned: " + string(column.get))
+      assertEquals("std-Column-1", string(column.get.name))
+      log.debug("get 'std-Column-1' returned: " + string(column.get))
 
       val columnCount = count(key)
       assertEquals(4, columnCount)
@@ -39,11 +39,11 @@ class TestStandardInesrtAndList extends CassandraTestPool with Logging {
       assertEquals(4, columns.size)
       columns.foreach {(c) => log.debug("list(key) returned column: " + string(c))}
 
-      columns = list(key, RangePredicate("Column-1", "Column-3"))
+      columns = list(key, RangePredicate("std-Column-1", "std-Column-3"))
       assertEquals(3, columns.size)
       columns.foreach {(c) => log.debug("list(key, range) returned column: " + string(c))}
 
-      columns = list(key, ColumnPredicate(List("Column-1", "Column-3")))
+      columns = list(key, ColumnPredicate(List("std-Column-1", "std-Column-3")))
       assertEquals(2, columns.size)
       columns.foreach {(c) => log.debug("list(key, columns) returned column: " + string(c))}
 

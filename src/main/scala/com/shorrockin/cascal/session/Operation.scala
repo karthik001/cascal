@@ -51,7 +51,7 @@ class Delete(val container:ColumnContainer[_, _], val predicate:Predicate) exten
   lazy val mutation = {
     val out = new Mutation
     val del = new Deletion
-    del.setTimestamp(now)
+//    del.setTimestamp(now)
 
     predicate match {
       case EmptyPredicate => /* do nothing */

@@ -16,7 +16,8 @@ class TestBatchOperations extends CassandraTestPool {
     val col2 = key \ ("Column-a-2", "Value-2")
     val col3 = key \ ("Column-a-3", "Value-3")
 
-    s.batch(Insert(col1) :: Insert(col2) :: Insert(col3))
+    val list1 = Insert(col1) :: Insert(col2) :: Insert(col3)
+    s.batch(list1)
 //    s.insert(col1)
 //    s.insert(col2)
 //    s.insert(col3)

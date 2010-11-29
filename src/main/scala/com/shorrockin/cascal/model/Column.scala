@@ -1,6 +1,5 @@
 package com.shorrockin.cascal.model
 
-import java.util.Date
 import java.nio.ByteBuffer
 
 import org.apache.cassandra.thrift.{ColumnPath, ColumnOrSuperColumn, Column => CassColumn}
@@ -19,7 +18,9 @@ import com.shorrockin.cascal.utils.Utils.now
  */
 case class Column(name: ByteBuffer, value: ByteBuffer, time: Long = now, owner: ColumnContainer[_, _])
         extends Gettable[Column] {
+
   val partial = (value == null)
+
   val key = owner.key
   val family = key.family
   val keyspace = key.keyspace
@@ -39,7 +40,6 @@ case class Column(name: ByteBuffer, value: ByteBuffer, time: Long = now, owner: 
     case std: StandardKey => new ColumnPath(family.value).setColumn(name)
   }
 
-
   lazy val columnOrSuperColumn = owner match {
     case std: StandardKey =>
       new ColumnOrSuperColumn().setColumn(new CassColumn(name, value, time))
@@ -47,8 +47,6 @@ case class Column(name: ByteBuffer, value: ByteBuffer, time: Long = now, owner: 
       val list = Conversions.toJavaList(new CassColumn(name, value, time) :: Nil)
       new ColumnOrSuperColumn().setSuper_column(new CassSuperColumn(sup.value, list))
   }
-
-
 
   /**
    * copy method to create a new instance of this column with a new value and

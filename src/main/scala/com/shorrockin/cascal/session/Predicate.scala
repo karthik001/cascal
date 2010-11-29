@@ -22,8 +22,10 @@ trait Predicate {
  * @author Chris Shorrock
  */
 case class ColumnPredicate(values:Seq[ByteBuffer]) extends Predicate {
-  val slicePredicate = new SlicePredicate()
-  slicePredicate.setColumn_names(Conversions.toJavaList(values))
+  val slicePredicate = {
+    val s = new SlicePredicate()
+    s.setColumn_names(Conversions.toJavaList(values))
+  }
 }
 
 object RangePredicate {
@@ -53,8 +55,11 @@ class RangePredicate(start:Option[ByteBuffer], end:Option[ByteBuffer], order:Ord
     case Some(i) => i
   }
 
-  val slicePredicate = new SlicePredicate()
-  slicePredicate.setSlice_range(new SliceRange(optBytesToBytes(start), optBytesToBytes(end), order.reversed, limitVal))
+  val slicePredicate = {
+    val slice = new SlicePredicate()
+    val sr = new SliceRange(optBytesToBytes(start), optBytesToBytes(end), order.reversed, limitVal)
+    slice.setSlice_range(sr)
+  }
 }
 
 case object EmptyPredicate extends RangePredicate(None, None, Order.Ascending, None)

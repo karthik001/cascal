@@ -4,6 +4,7 @@ import testing._
 import model.{Column, SuperColumn}
 import org.junit.{Test, Assert}
 import utils.{UUID, Conversions, Logging}
+import java.nio.ByteBuffer
 
 class TestSuperInsertAndList extends CassandraTestPool with Logging {
   import Assert._

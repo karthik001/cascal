@@ -75,7 +75,7 @@ class Converter(serializers:Map[Class[_], Serializer[_]]) {
         // if there's a value annotation look up the column with the matching name and then
         // retrieve the value, and convert it as needed.
         case a:AValue => find(a.value, columns) match {
-          case None    => throw new IllegalArgumentException("Unable to find column with name: " + a.value)
+          case None    => throw new IllegalArgumentException("Unable to find column with name '%s'".format(a.value))
           case Some(c) => bytesToObject(cls, c.value)
         }
 

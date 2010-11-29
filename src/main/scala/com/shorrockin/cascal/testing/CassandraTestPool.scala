@@ -1,12 +1,15 @@
 package com.shorrockin.cascal.testing
 
 import org.apache.cassandra.thrift.CassandraDaemon
-import java.io.File
+import java.io.{File=>JFile}
 
 import org.apache.thrift.transport.TSocket
 import com.shorrockin.cascal.session._
 import com.shorrockin.cascal.utils.{Utils, Logging}
 import org.apache.cassandra.config.{KSMetaData, CFMetaData, DatabaseDescriptor}
+
+import org.brzy.fab.file.FileUtils._
+import org.brzy.fab.file.File
 
 /**
  * trait which mixes in the functionality necessary to embed
@@ -46,26 +49,24 @@ object EmbeddedTestCassandra extends Logging {
 
   def init = synchronized {
     if (!initialized) {
-      val homeDirectory = new File("target/cassandra.home.unit-tests")
-      //      delete(homeDirectory)
-      //      homeDirectory.mkdirs
+      val homeDirectory = File("target/cassandra.home.unit-tests")
+      homeDirectory.trash
+      homeDirectory.mkdirs
 
       log.debug("creating cassandra instance at: " + homeDirectory.getCanonicalPath)
-      //      log.debug("copying cassandra configuration files to root directory")
+      log.debug("copying cassandra configuration files to root directory")
 
       val fileSep = System.getProperty("file.separator")
-      // val storageFile = new File(homeDirectory, "storage-conf.xml")
-      //      val storageFile = new File(homeDirectory, "cassandra.yaml")
-      //      val logFile     = new File(homeDirectory, "log4j.properties")
-      //
-      //      replace(copy(resource("/cassandra.yaml"), storageFile), ("%temp-dir%" -> (homeDirectory.getCanonicalPath + fileSep)))
-      //      copy(resource("/log4j.properties"), logFile)
+
+      val storageSource = new JFile(this.getClass.getResource("/cassandra.yaml").getPath)
+      storageSource copyTo homeDirectory
+
+      val logSource = new JFile(this.getClass.getResource("/log4j.properties").getPath)
+      logSource copyTo homeDirectory
 
       loadSchemaFromYaml
       System.setProperty("storage-config", homeDirectory.getCanonicalPath)
       log.debug("creating data file and log location directories")
-      DatabaseDescriptor.getAllDataFileLocations.foreach {(file) => new File(file).mkdirs}
-      // new File(DatabaseDescriptor.getLogFileLocation).mkdirs
 
       val daemon = new CassandraDaemonThread
       daemon.start
@@ -85,6 +86,7 @@ object EmbeddedTestCassandra extends Logging {
         }
         catch {
           case e: Throwable => log.error("******************** Not started", e)
+          opened = true
         }
         finally {
           socket.close()

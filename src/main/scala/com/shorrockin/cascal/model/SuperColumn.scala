@@ -23,8 +23,9 @@ case class SuperColumn(value:ByteBuffer, key:SuperKey) // extends Key[Column, Se
   override val family = key.family
   override val keyspace = family.keyspace
 
-  override lazy val columnPath = new ColumnPath(family.value).setSuper_column(key.value)
   override lazy val columnParent = new ColumnParent(family.value).setSuper_column(key.value)
+  override lazy val columnPath = new ColumnPath(family.value).setSuper_column(key.value).setColumn(value)
+
 
   def ::(other:SuperColumn):List[SuperColumn] = other :: this :: Nil
 
